@@ -8,7 +8,7 @@
 
 # define TILE_SIZE 32
 # define FOV 60
-# define PI 3.14159265
+#define PI 3.14159265358979323846
 
 typedef struct s_player
 {
@@ -148,27 +148,62 @@ void init_bg(mlx_image_t *bg)
     }
 }
 
-void move_player(mlx_key_data_t key, void *param)
+float normalize_angle(float angle)
+{
+    // First, reduce the angle  
+    angle = fmod(angle, 2 * PI);
+    
+    // If angle is negative, add 2*PI to make it positive
+    if (angle < 0)
+        angle += 2 * PI;
+        
+    return angle;
+}
+
+void move_player(void *param)
 {
     t_player *player = (t_player *)param;
     mlx_t *mlx = player->mlx;
 
-    int old_x = player->img->instances->x;
-    int old_y = player->img->instances->y;
+    float move_forward = 0;
+    float move_sideways = 0;
+    float rot_speed = 0.05f;
+    float move_speed = 2;
 
-    if (key.key == 27)
-		mlx_close_window(mlx);
-    // if ()
-    //    old_y -= 50;
-    // if ()
-    //     old_y += 50;
-    // if ()
-    //     old_x -= 50;
-    // if ()
-    //     old_x += 50; 
+    if (mlx_is_key_down(mlx, MLX_KEY_ESCAPE))
+        mlx_close_window(mlx);
+
+    if (mlx_is_key_down(mlx, MLX_KEY_W))
+        move_forward = move_speed;
+    if (mlx_is_key_down(mlx, MLX_KEY_S))
+        move_forward = -move_speed;
+    // if (mlx_is_key_down(mlx, MLX_KEY_A))
+    //     move_sideways = -move_speed;
+    // if (mlx_is_key_down(mlx, MLX_KEY_D))
+    //     move_sideways = move_speed;
+
+    if (mlx_is_key_down(mlx, MLX_KEY_LEFT))
+        player->direction_angle -= rot_speed;
+    if (mlx_is_key_down(mlx, MLX_KEY_RIGHT))
+        player->direction_angle += rot_speed;
     
-    player->img->instances->x = old_x * 4;
-    player->img->instances->y = old_y * 4;
+
+    float move_x = cos(player->direction_angle) * move_forward + 
+                  cos(player->direction_angle + PI/2) * move_sideways;
+    float move_y = sin(player->direction_angle) * move_forward + 
+                  sin(player->direction_angle + PI/2) * move_sideways;
+
+    player->img->instances->x += move_x;
+    player->img->instances->y += move_y;
+
+    memset(player->direction_ray->pixels, 0, 
+          player->direction_ray->width * player->direction_ray->height * sizeof(int32_t));
+    
+    float player_center_x = player->img->instances[0].x + player->size/2;
+    float player_center_y = player->img->instances[0].y + player->size/2;
+    float end_x = player_center_x + cos(player->direction_angle) * 50.0f;
+    float end_y = player_center_y + sin(player->direction_angle) * 50.0f;
+    draw_line(player->direction_ray, player_center_x, player_center_y, end_x, end_y, 0xFF0000FF);
 }
 
 int main()
@@ -176,10 +211,10 @@ int main()
     char **map = create_dynamic_map();
     
     t_player player;
-    player.x = 5;
-    player.y = 3;
+    player.x = 5 * TILE_SIZE;
+    player.y = 3 * TILE_SIZE;
     player.size = 4;
-    player.direction_angle = deg_to_radian(90);
+    player.direction_angle = deg_to_radian(0);
 
     int SCREEN_WIDTH = strlen(*map) * TILE_SIZE;
     int SCREEN_HEIGHT = 9 * TILE_SIZE;
@@ -187,67 +222,37 @@ int main()
     mlx_t* mlx = mlx_init(SCREEN_WIDTH, SCREEN_HEIGHT, "cub", false);
     if (!mlx)
         return (1);
+    player.mlx = mlx;
 
     mlx_image_t* img = mlx_new_image(mlx, SCREEN_WIDTH, SCREEN_HEIGHT);
-    if (!img)
-        return (1);
-
-   player.img = mlx_new_image(mlx, player.size, player.size);
-    if (!player.img)
-        return (1);
-    
-    mlx_image_t *bg = mlx_new_image(mlx, SCREEN_WIDTH, SCREEN_HEIGHT);
-    if (!bg)
-        return (1);
-
-    player.direction_ray = mlx_new_image(mlx, SCREEN_WIDTH, SCREEN_HEIGHT);
-    if (!player.direction_ray)
-        return 1;
-    player.left_ray = mlx_new_image(mlx, SCREEN_WIDTH, SCREEN_HEIGHT);
-    if (!player.left_ray)
-        return 1;
-    player.right_ray = mlx_new_image(mlx, SCREEN_WIDTH, SCREEN_HEIGHT);
-    if (!player.right_ray)
-        return 1;
-
-    init_bg(bg);
-    mlx_image_to_window(mlx, bg, 0, 0);
-
     build_map(map, img);
     mlx_image_to_window(mlx, img, 0, 0);
 
-    float player_center_x = player.x * TILE_SIZE + TILE_SIZE / 2;
-    float player_center_y = player.y * TILE_SIZE + TILE_SIZE / 2;
+    player.img = mlx_new_image(mlx, player.size, player.size);
+    for (int y = 0; y < player.size; y++) {
+        for (int x = 0; x < player.size; x++) {
+            mlx_put_pixel(player.img, x, y, 0xFF0000FF);
+        }
+    }
+    
+    mlx_image_to_window(mlx, player.img, player.x, player.y);
 
-    draw_square(player.img, 1, 1, 0x000000FF);
+    player.direction_ray = mlx_new_image(mlx, SCREEN_WIDTH * 5, SCREEN_HEIGHT * 5);
+    mlx_image_to_window(mlx, player.direction_ray, 0, 0);
 
-    float ray_length = 600.0f;
-    float fov = deg_to_radian(FOV);
-    float half_fov = fov / 2;
-
-    float center_angle = player.direction_angle;
-    float end_x = player_center_x + cos(center_angle) * ray_length;
-    float end_y = player_center_y + sin(center_angle) * ray_length;
+    float player_center_x = player.x + player.size/2;
+    float player_center_y = player.y + player.size/2;
+    float end_x = player_center_x + cos(player.direction_angle) * 60;
+    float end_y = player_center_y + sin(player.direction_angle) * 60;
     draw_line(player.direction_ray, player_center_x, player_center_y, end_x, end_y, 0xFF0000FF);
 
-    float left_angle = center_angle - half_fov;
-    end_x = player_center_x + cos(left_angle) * ray_length;
-    end_y = player_center_y + sin(left_angle) * ray_length;
-    draw_line(player.left_ray, player_center_x, player_center_y, end_x, end_y, 0xFF0000FF);
-
-    float right_angle = center_angle + half_fov;
-    end_x = player_center_x + cos(right_angle) * ray_length;
-    end_y = player_center_y + sin(right_angle) * ray_length;
-    draw_line(player.right_ray, player_center_x, player_center_y, end_x, end_y, 0xFF0000FF);
-
-    mlx_image_to_window(mlx, player.direction_ray, 0, 0);
-    mlx_image_to_window(mlx, player.left_ray, 0, 0);
-    mlx_image_to_window(mlx, player.right_ray, 0, 0);
-    mlx_image_to_window(mlx, player.img, player_center_x - player.size / 2, player_center_y - player.size /2);
-    
+    mlx_loop_hook(mlx, move_player, &player);
     mlx_loop(mlx);
-    mlx_key_hook(mlx, move_player, &player);
-    mlx_close_window(mlx);
-
+    
+    mlx_terminate(mlx);
+    for (int i = 0; map[i]; i++)
+        free(map[i]);
+    free(map);
+    
     return (0);
 }
