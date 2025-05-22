@@ -121,21 +121,24 @@ void move_player(void *param)
 
     float move_forward = 0;
     float move_sideways = 0;
-    float rot_speed = 0.05f;
-    float move_speed = 2.0f;
+    float rot_speed = 0.02f;
+    float move_speed = 2.0f; //-rate independent
 
     if (mlx_is_key_down(mlx, MLX_KEY_ESCAPE))
         mlx_close_window(mlx);
 
+    // Movement inputs
     if (mlx_is_key_down(mlx, MLX_KEY_W))
         move_forward = move_speed;
     if (mlx_is_key_down(mlx, MLX_KEY_S))
         move_forward = -move_speed;
+
     if (mlx_is_key_down(mlx, MLX_KEY_A))
         move_sideways = -move_speed;
     if (mlx_is_key_down(mlx, MLX_KEY_D))
         move_sideways = move_speed;
 
+    // Rotation inputs
     if (mlx_is_key_down(mlx, MLX_KEY_LEFT))
         player->direction_angle -= rot_speed;
     if (mlx_is_key_down(mlx, MLX_KEY_RIGHT))
@@ -143,38 +146,35 @@ void move_player(void *param)
     
     player->direction_angle = normalize_angle(player->direction_angle);
 
-    float player_center_x = player->img->instances[0].x + player->size/2;
-    float player_center_y = player->img->instances[0].y + player->size/2;
-
-    float forward_x = cos(player->direction_angle) * move_forward;
-    float forward_y = sin(player->direction_angle) * move_forward;
+    // Calculate movement vectors
+    float forward_x = cosf(player->direction_angle) * move_forward;
+    float forward_y = sinf(player->direction_angle) * move_forward;
     
     float strafe_angle = player->direction_angle + PI/2.0f;
-    float strafe_x = cos(strafe_angle) * move_sideways;
-    float strafe_y = sin(strafe_angle) * move_sideways;
+    float strafe_x = cosf(strafe_angle) * move_sideways;
+    float strafe_y = sinf(strafe_angle) * move_sideways;
 
-    float total_move_x = forward_x + strafe_x;
-    float total_move_y = forward_y + strafe_y;
+    // Update position (add to current position)
+    player->img->instances->x += forward_x + strafe_x;
+    player->img->instances->y += forward_y + strafe_y;
 
-    player_center_x += total_move_x;
-    player_center_y += total_move_y;
-
-    player->img->instances[0].x = player_center_x - player->size/2;
-    player->img->instances[0].y = player_center_y - player->size/2;
-
+    // Update direction indicator
     memset(player->direction_ray->pixels, 0, 
           player->direction_ray->width * player->direction_ray->height * sizeof(int32_t));
     
-    float end_x = player_center_x + cos(player->direction_angle) * 60.0f;
-    float end_y = player_center_y + sin(player->direction_angle) * 60.0f;
-    draw_line(player->direction_ray, player_center_x, player_center_y, end_x, end_y, 0xFF0000FF);
+    float end_x = player->img->instances->x + cosf(player->direction_angle) * 60.0f;
+    float end_y = player->img->instances->y + sinf(player->direction_angle) * 60.0f;
+    draw_line(player->direction_ray, 
+             player->img->instances->x, 
+             player->img->instances->y, 
+             end_x, end_y, 0xFF0000FF);
 }
 
 int main()
 {
     char **map = create_dynamic_map();
     t_player player;
-    player.size = 10;
+    player.size = 4;
     player.direction_angle = deg_to_radian(0);
 
     int SCREEN_WIDTH = strlen(*map) * TILE_SIZE;
