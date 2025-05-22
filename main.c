@@ -5,32 +5,34 @@
 #include <string.h>
 #include <math.h>
 
-
-# define TILE_SIZE 32
-# define FOV 60
+#define TILE_SIZE 64
+#define FOV 60
 #define PI 3.14159265358979323846
 
 typedef struct s_player
 {
-    int x;
-    int y;
     int size;
     float direction_angle;
     mlx_t *mlx;
     mlx_image_t *img;
     mlx_image_t *direction_ray;
-    mlx_image_t *left_ray;
-    mlx_image_t *right_ray;
-}   t_player;
+} t_player;
 
 float deg_to_radian(float deg)
 {
     return (deg * PI / 180);
 }
 
+float normalize_angle(float angle)
+{
+    angle = fmod(angle, 2 * PI);
+    if (angle < 0)
+        angle += 2 * PI;
+    return angle;
+}
+
 char **create_dynamic_map(void)
 {
-    // Original static map
     char *static_map[] = {
         "111111111111111111111",
         "100000000010000000001",
@@ -61,7 +63,6 @@ char **create_dynamic_map(void)
             return NULL;
         }
     }
-
     dynamic_map[rows] = NULL;
     return dynamic_map;
 }
@@ -96,68 +97,21 @@ void draw_line(void *img, int x0, int y0, int x1, int y1, int color)
 
 void draw_square(mlx_image_t *img, int x, int y, int color)
 {
-    int i = 0;
-    int j = 0;
-
-    while (i < TILE_SIZE - 1)
-    {
-        j = 0;
-        while (j < TILE_SIZE - 1)
-        {
+    for (int i = 0; i < TILE_SIZE - 1; i++) {
+        for (int j = 0; j < TILE_SIZE - 1; j++) {
             mlx_put_pixel(img, x + j, y + i, color);
-            j++;
         }
-        i++;
     }
 }
 
 void build_map(char **map, mlx_image_t *img)
 {
-    int i = 0;
-    int j = 0;
-
-    while (map[i])
-    {
-        j = 0;
-        while (map[i][j])
-        {
-            if (map[i][j] == '1')
-                draw_square(img, j *TILE_SIZE, i *TILE_SIZE, 0x101010FF);
-            else
-                draw_square(img, j *TILE_SIZE, i *TILE_SIZE, 0xA0A0A0FF);
-            j++;
+    for (int i = 0; map[i]; i++) {
+        for (int j = 0; map[i][j]; j++) {
+            draw_square(img, j * TILE_SIZE, i * TILE_SIZE, 
+                       map[i][j] == '1' ? 0x101010FF : 0xA0A0A0FF);
         }
-        i++;
     }
-}
-
-void init_bg(mlx_image_t *bg)
-{
-    int i = 0;
-    int j = 0;
-
-    while (i < 10 * TILE_SIZE)
-    {
-        j = 0;
-        while (j < 6 * TILE_SIZE)
-        {
-            draw_square(bg, i, j, 0x000000FF);
-            j++;
-        }
-        i++;
-    }
-}
-
-float normalize_angle(float angle)
-{
-    // First, reduce the angle  
-    angle = fmod(angle, 2 * PI);
-    
-    // If angle is negative, add 2*PI to make it positive
-    if (angle < 0)
-        angle += 2 * PI;
-        
-    return angle;
 }
 
 void move_player(void *param)
@@ -168,7 +122,7 @@ void move_player(void *param)
     float move_forward = 0;
     float move_sideways = 0;
     float rot_speed = 0.05f;
-    float move_speed = 2;
+    float move_speed = 2.0f;
 
     if (mlx_is_key_down(mlx, MLX_KEY_ESCAPE))
         mlx_close_window(mlx);
@@ -177,43 +131,50 @@ void move_player(void *param)
         move_forward = move_speed;
     if (mlx_is_key_down(mlx, MLX_KEY_S))
         move_forward = -move_speed;
-    // if (mlx_is_key_down(mlx, MLX_KEY_A))
-    //     move_sideways = -move_speed;
-    // if (mlx_is_key_down(mlx, MLX_KEY_D))
-    //     move_sideways = move_speed;
+    if (mlx_is_key_down(mlx, MLX_KEY_A))
+        move_sideways = -move_speed;
+    if (mlx_is_key_down(mlx, MLX_KEY_D))
+        move_sideways = move_speed;
 
     if (mlx_is_key_down(mlx, MLX_KEY_LEFT))
         player->direction_angle -= rot_speed;
     if (mlx_is_key_down(mlx, MLX_KEY_RIGHT))
         player->direction_angle += rot_speed;
     
+    player->direction_angle = normalize_angle(player->direction_angle);
 
-    float move_x = cos(player->direction_angle) * move_forward + 
-                  cos(player->direction_angle + PI/2) * move_sideways;
-    float move_y = sin(player->direction_angle) * move_forward + 
-                  sin(player->direction_angle + PI/2) * move_sideways;
+    float player_center_x = player->img->instances[0].x + player->size/2;
+    float player_center_y = player->img->instances[0].y + player->size/2;
 
-    player->img->instances->x += move_x;
-    player->img->instances->y += move_y;
+    float forward_x = cos(player->direction_angle) * move_forward;
+    float forward_y = sin(player->direction_angle) * move_forward;
+    
+    float strafe_angle = player->direction_angle + PI/2.0f;
+    float strafe_x = cos(strafe_angle) * move_sideways;
+    float strafe_y = sin(strafe_angle) * move_sideways;
+
+    float total_move_x = forward_x + strafe_x;
+    float total_move_y = forward_y + strafe_y;
+
+    player_center_x += total_move_x;
+    player_center_y += total_move_y;
+
+    player->img->instances[0].x = player_center_x - player->size/2;
+    player->img->instances[0].y = player_center_y - player->size/2;
 
     memset(player->direction_ray->pixels, 0, 
           player->direction_ray->width * player->direction_ray->height * sizeof(int32_t));
     
-    float player_center_x = player->img->instances[0].x + player->size/2;
-    float player_center_y = player->img->instances[0].y + player->size/2;
-    float end_x = player_center_x + cos(player->direction_angle) * 50.0f;
-    float end_y = player_center_y + sin(player->direction_angle) * 50.0f;
+    float end_x = player_center_x + cos(player->direction_angle) * 60.0f;
+    float end_y = player_center_y + sin(player->direction_angle) * 60.0f;
     draw_line(player->direction_ray, player_center_x, player_center_y, end_x, end_y, 0xFF0000FF);
 }
 
 int main()
 {
     char **map = create_dynamic_map();
-    
     t_player player;
-    player.x = 5 * TILE_SIZE;
-    player.y = 3 * TILE_SIZE;
-    player.size = 4;
+    player.size = 10;
     player.direction_angle = deg_to_radian(0);
 
     int SCREEN_WIDTH = strlen(*map) * TILE_SIZE;
@@ -221,27 +182,28 @@ int main()
 
     mlx_t* mlx = mlx_init(SCREEN_WIDTH, SCREEN_HEIGHT, "cub", false);
     if (!mlx)
-        return (1);
+        return 1;
     player.mlx = mlx;
 
     mlx_image_t* img = mlx_new_image(mlx, SCREEN_WIDTH, SCREEN_HEIGHT);
     build_map(map, img);
     mlx_image_to_window(mlx, img, 0, 0);
 
+    int start_x = 5 * TILE_SIZE - player.size/2;
+    int start_y = 3 * TILE_SIZE - player.size/2;
     player.img = mlx_new_image(mlx, player.size, player.size);
     for (int y = 0; y < player.size; y++) {
         for (int x = 0; x < player.size; x++) {
             mlx_put_pixel(player.img, x, y, 0xFF0000FF);
         }
     }
-    
-    mlx_image_to_window(mlx, player.img, player.x, player.y);
+    mlx_image_to_window(mlx, player.img, start_x, start_y);
 
-    player.direction_ray = mlx_new_image(mlx, SCREEN_WIDTH * 5, SCREEN_HEIGHT * 5);
+    player.direction_ray = mlx_new_image(mlx, SCREEN_WIDTH, SCREEN_HEIGHT);
     mlx_image_to_window(mlx, player.direction_ray, 0, 0);
 
-    float player_center_x = player.x + player.size/2;
-    float player_center_y = player.y + player.size/2;
+    float player_center_x = start_x + player.size/2;
+    float player_center_y = start_y + player.size/2;
     float end_x = player_center_x + cos(player.direction_angle) * 60;
     float end_y = player_center_y + sin(player.direction_angle) * 60;
     draw_line(player.direction_ray, player_center_x, player_center_y, end_x, end_y, 0xFF0000FF);
@@ -254,5 +216,5 @@ int main()
         free(map[i]);
     free(map);
     
-    return (0);
+    return 0;
 }
