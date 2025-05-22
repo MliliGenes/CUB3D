@@ -178,7 +178,6 @@ double cast_single_ray_distance(char **map, double player_x, double player_y, do
         }
     }
     
-    // Calculate distance
     double wall_dist;
     if (side == 0) {
         wall_dist = (map_x - pos_x + (1 - step_x) / 2) / ray_dir_x;
@@ -197,12 +196,12 @@ void cast_fov_rays(t_player *player, char **map)
     double player_x = player->img->instances->x + player->size / 2.0;
     double player_y = player->img->instances->y + player->size / 2.0;
     
-    int num_rays = 1000;
+    int num_rays = 60;
     double fov_radians = deg_to_radian(60);  // 60 degrees in radians
     double angle_step = fov_radians / num_rays;
     
     // Starting angle (left edge of FOV)
-    double start_angle = player->direction_angle - (fov_radians / 2.0);
+    double start_angle = player->direction_angle - (fov_radians /2);
     
     // Cast each ray
     for (int i = 0; i < num_rays; i++) {
