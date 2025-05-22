@@ -144,18 +144,18 @@ void move_player(void *param)
     
     player->direction_angle = normalize_angle(player->direction_angle);
 
-    int forward_x = cos(player->direction_angle) * move_forward;
-    printf("cos %d\n", forward_x);
-    int forward_y = sin(player->direction_angle) * move_forward;
-    printf("sin %d\n", forward_y);
+    double forward_x = cos(player->direction_angle) * move_forward;
+    printf("cos %f\n", forward_x);
+    double forward_y = sin(player->direction_angle) * move_forward;
+    printf("sin %f\n", forward_y);
     
     float strafe_angle = player->direction_angle + PI/2;
 
-    int strafe_x = cos(strafe_angle) * move_sideways;
-    int strafe_y = sin(strafe_angle) * move_sideways;
+    double strafe_x = cos(strafe_angle) * move_sideways;
+    double strafe_y = sin(strafe_angle) * move_sideways;
 
-    int start_x = forward_x + strafe_x;
-    int start_y = forward_y + strafe_y;
+    double start_x = forward_x + strafe_x;
+    double start_y = forward_y + strafe_y;
 
     player->img->instances->x += start_x;
     player->img->instances->y += start_y;
