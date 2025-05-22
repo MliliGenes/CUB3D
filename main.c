@@ -121,7 +121,7 @@ void move_player(void *param)
     int move_forward = 0;
     int move_sideways = 0;
 
-    double rot_speed = 0.5;
+    double rot_speed = 0.1;
     int move_speed = 10;
 
     if (mlx_is_key_down(mlx, MLX_KEY_ESCAPE))
