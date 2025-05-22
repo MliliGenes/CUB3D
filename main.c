@@ -4,16 +4,19 @@
 #include <string.h>
 #include <math.h>
 
-#define TILE_SIZE 100
+#define TILE_SIZE 64
 #define FOV 60
 #define PI 3.14159265358979323846
 
 typedef struct s_player
 {
+    char ** map;
     int size;
     float direction_angle;
     double x_pos;
     double y_pos;
+    double reminder_x;
+    double reminder_y;
     mlx_t *mlx;
     mlx_image_t *img;
     mlx_image_t *direction_ray;
@@ -41,7 +44,7 @@ char **create_dynamic_map(void)
         "101000010000100000101",
         "101011110111101110101",
         "101000000000000000101",
-        "101111011111101111101",
+        "101111011111101111001",
         "100000000010000000001",
         "111111111111111111111",
         NULL
@@ -115,6 +118,119 @@ void build_map(char **map, mlx_image_t *img)
     }
 }
 
+int32_t ft_pixel(int32_t r, int32_t g, int32_t b, int32_t a)
+{
+    return (r << 24 | g << 16 | b << 8 | a);
+}
+
+double cast_single_ray_distance(char **map, double player_x, double player_y, double ray_dir_x, double ray_dir_y)
+{
+    // Convert to map coordinates
+    double pos_x = player_x / TILE_SIZE;
+    double pos_y = player_y / TILE_SIZE;
+    
+    // Current map position
+    int map_x = (int)pos_x;
+    int map_y = (int)pos_y;
+    
+    // Distance ray travels for each unit step
+    double delta_dist_x = fabs(1.0 / ray_dir_x);
+    double delta_dist_y = fabs(1.0 / ray_dir_y);
+    
+    // Step direction and initial distances
+    int step_x, step_y;
+    double side_dist_x, side_dist_y;
+    
+    if (ray_dir_x < 0) {
+        step_x = -1;
+        side_dist_x = (pos_x - map_x) * delta_dist_x;
+    } else {
+        step_x = 1;
+        side_dist_x = (map_x + 1.0 - pos_x) * delta_dist_x;
+    }
+    
+    if (ray_dir_y < 0) {
+        step_y = -1;
+        side_dist_y = (pos_y - map_y) * delta_dist_y;
+    } else {
+        step_y = 1;
+        side_dist_y = (map_y + 1.0 - pos_y) * delta_dist_y;
+    }
+    
+    // DDA loop
+    int hit = 0;
+    int side;
+    
+    while (hit == 0) {
+        if (side_dist_x < side_dist_y) {
+            side_dist_x += delta_dist_x;
+            map_x += step_x;
+            side = 0;
+        } else {
+            side_dist_y += delta_dist_y;
+            map_y += step_y;
+            side = 1;
+        }
+        
+        // Check bounds and wall hit
+        if (map[map_y] && map[map_y][map_x] && map[map_y][map_x] == '1') {
+            hit = 1;
+        }
+    }
+    
+    // Calculate distance
+    double wall_dist;
+    if (side == 0) {
+        wall_dist = (map_x - pos_x + (1 - step_x) / 2) / ray_dir_x;
+    } else {
+        wall_dist = (map_y - pos_y + (1 - step_y) / 2) / ray_dir_y;
+    }
+    
+    return wall_dist * TILE_SIZE;
+}
+
+void cast_fov_rays(t_player *player, char **map)
+{
+    memset(player->direction_ray->pixels, 0, 
+          player->direction_ray->width * player->direction_ray->height * sizeof(int32_t));
+    
+    double player_x = player->img->instances->x + player->size / 2.0;
+    double player_y = player->img->instances->y + player->size / 2.0;
+    
+    int num_rays = 1000;
+    double fov_radians = deg_to_radian(60);  // 60 degrees in radians
+    double angle_step = fov_radians / num_rays;
+    
+    // Starting angle (left edge of FOV)
+    double start_angle = player->direction_angle - (fov_radians / 2.0);
+    
+    // Cast each ray
+    for (int i = 0; i < num_rays; i++) {
+        // Current ray angle
+        double ray_angle = start_angle + (i * angle_step);
+        ray_angle = normalize_angle(ray_angle);
+        
+        // Ray direction
+        double ray_dir_x = cos(ray_angle);
+        double ray_dir_y = sin(ray_angle);
+        
+        // Cast the ray and get distance
+        double wall_dist = cast_single_ray_distance(map, player_x, player_y, ray_dir_x, ray_dir_y);
+        
+        // Calculate end point
+        int end_x = (int)(player_x + ray_dir_x * wall_dist);
+        int end_y = (int)(player_y + ray_dir_y * wall_dist);
+        
+        // Choose color based on ray (center ray red, others yellow)
+        int color = (i == num_rays / 2) ? 0xFF0000FF : 0xFF0000FF;
+        
+        // Draw the ray
+        draw_line(player->direction_ray, 
+                 (int)player_x, (int)player_y, 
+                 end_x, end_y, color);
+    }
+}
+
 void move_player(void *param)
 {
     t_player *player = (t_player *)param;
@@ -125,9 +241,6 @@ void move_player(void *param)
 
     double rot_speed = PI/20;
     double move_speed = 2;
-
-    player->x_pos = player->img->instances->x;
-    player->y_pos = player->img->instances->y;
 
     if (mlx_is_key_down(mlx, MLX_KEY_ESCAPE))
         mlx_close_window(mlx);
@@ -151,37 +264,23 @@ void move_player(void *param)
 
     double forward_x = cos(player->direction_angle) * move_forward;
     double forward_y = sin(player->direction_angle) * move_forward;
-    printf("cos %f\n", forward_x);
-    printf("sin %f\n", forward_y);
     
     float strafe_angle = player->direction_angle + PI/2;
     double strafe_x = cos(strafe_angle) * move_sideways;
     double strafe_y = sin(strafe_angle) * move_sideways;
-
-    static float x_remainder = 0;
-    static float y_remainder = 0;
-
-    float total_x = forward_x + strafe_x + x_remainder;
-    float total_y = forward_y + strafe_y + y_remainder;
+    
+    float total_x = forward_x + strafe_x + player->reminder_x;
+    float total_y = forward_y + strafe_y + player->reminder_y;
 
     int move_x = (int)round(total_x);
     int move_y = (int)round(total_y);
-    x_remainder = total_x - move_x;
-    y_remainder = total_y - move_y;
+    player->reminder_x = total_x - move_x;
+    player->reminder_y = total_y - move_y;
 
     player->img->instances->x += move_x;
     player->img->instances->y += move_y;
 
-    memset(player->direction_ray->pixels, 0, 
-          player->direction_ray->width * player->direction_ray->height * sizeof(int32_t));
-
-    int end_x = player->img->instances->x + (cos(player->direction_angle) * 500);
-    int end_y = player->img->instances->y + (sin(player->direction_angle) * 500);
-
-    draw_line(player->direction_ray, 
-             player->img->instances->x + player->size / 2, 
-             player->img->instances->y + player->size / 2, 
-             end_x  + player->size / 2, end_y + player->size / 2, 0xFF0000FF);
+    cast_fov_rays(player, player->map);
 }
 
 int main()
@@ -189,8 +288,10 @@ int main()
     char **map = create_dynamic_map();
     t_player player;
     player.size = 4;
-    player.direction_angle = deg_to_radian(-90);
-
+    player.reminder_x = 0;
+    player.reminder_y = 0;
+    player.direction_angle = deg_to_radian(90);
+    player.map = map;
     int SCREEN_WIDTH = strlen(*map) * TILE_SIZE;
     int SCREEN_HEIGHT = 9 * TILE_SIZE;
 
@@ -222,8 +323,6 @@ int main()
 
     int end_x = player_center_x + cos(player.direction_angle) * 60;
     int end_y = player_center_y + sin(player.direction_angle) * 60;
-
-    draw_line(player.direction_ray, player_center_x, player_center_y, end_x, end_y, 0xFF0000FF);
 
     mlx_loop_hook(mlx, move_player, &player);
     mlx_loop(mlx);
