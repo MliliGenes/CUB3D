@@ -4,7 +4,7 @@
 #include <string.h>
 #include <math.h>
 
-#define TILE_SIZE 64
+#define TILE_SIZE 100
 #define FOV 60
 #define PI 3.14159265358979323846
 
@@ -12,6 +12,8 @@ typedef struct s_player
 {
     int size;
     float direction_angle;
+    double x_pos;
+    double y_pos;
     mlx_t *mlx;
     mlx_image_t *img;
     mlx_image_t *direction_ray;
@@ -121,8 +123,11 @@ void move_player(void *param)
     int move_forward = 0;
     int move_sideways = 0;
 
-    double rot_speed = 0.1;
-    int move_speed = 10;
+    double rot_speed = PI/20;
+    double move_speed = 2;
+
+    player->x_pos = player->img->instances->x;
+    player->y_pos = player->img->instances->y;
 
     if (mlx_is_key_down(mlx, MLX_KEY_ESCAPE))
         mlx_close_window(mlx);
@@ -145,20 +150,27 @@ void move_player(void *param)
     player->direction_angle = normalize_angle(player->direction_angle);
 
     double forward_x = cos(player->direction_angle) * move_forward;
-    printf("cos %f\n", forward_x);
     double forward_y = sin(player->direction_angle) * move_forward;
+    printf("cos %f\n", forward_x);
     printf("sin %f\n", forward_y);
     
     float strafe_angle = player->direction_angle + PI/2;
-
     double strafe_x = cos(strafe_angle) * move_sideways;
     double strafe_y = sin(strafe_angle) * move_sideways;
 
-    double start_x = forward_x + strafe_x;
-    double start_y = forward_y + strafe_y;
+    static float x_remainder = 0;
+    static float y_remainder = 0;
 
-    player->img->instances->x += start_x;
-    player->img->instances->y += start_y;
+    float total_x = forward_x + strafe_x + x_remainder;
+    float total_y = forward_y + strafe_y + y_remainder;
+
+    int move_x = (int)round(total_x);
+    int move_y = (int)round(total_y);
+    x_remainder = total_x - move_x;
+    y_remainder = total_y - move_y;
+
+    player->img->instances->x += move_x;
+    player->img->instances->y += move_y;
 
     memset(player->direction_ray->pixels, 0, 
           player->direction_ray->width * player->direction_ray->height * sizeof(int32_t));
@@ -167,9 +179,9 @@ void move_player(void *param)
     int end_y = player->img->instances->y + (sin(player->direction_angle) * 500);
 
     draw_line(player->direction_ray, 
-             player->img->instances->x, 
-             player->img->instances->y, 
-             end_x , end_y, 0xFF0000FF);
+             player->img->instances->x + player->size / 2, 
+             player->img->instances->y + player->size / 2, 
+             end_x  + player->size / 2, end_y + player->size / 2, 0xFF0000FF);
 }
 
 int main()
