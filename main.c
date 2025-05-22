@@ -1,5 +1,4 @@
-#include <MLX42/MLX42.h>
-#include <MLX42/MLX42_Int.h>
+#include "include/MLX42/MLX42.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,9 +24,9 @@ float deg_to_radian(float deg)
 
 float normalize_angle(float angle)
 {
-    angle = fmod(angle, 2 * PI);
+    angle = fmod(angle ,2 * PI);
     if (angle < 0)
-        angle += 2 * PI;
+        angle = (2 * PI) + angle;
     return angle;
 }
 
@@ -67,7 +66,7 @@ char **create_dynamic_map(void)
     return dynamic_map;
 }
 
-void draw_line(void *img, int x0, int y0, int x1, int y1, int color)
+void draw_line(mlx_image_t *img, int x0, int y0, int x1, int y1, int color)
 {
     int dx = abs(x1 - x0);
     int dy = abs(y1 - y0);
@@ -78,7 +77,7 @@ void draw_line(void *img, int x0, int y0, int x1, int y1, int color)
 
     while (1)
     {
-        mlx_put_pixel(img, x0, y0, color);
+        x0 < img->width && y0 < img->height ? mlx_put_pixel(img, x0, y0, color) : NULL;
         if (x0 == x1 && y0 == y1)
             break;
         e2 = 2 * err;
@@ -119,18 +118,18 @@ void move_player(void *param)
     t_player *player = (t_player *)param;
     mlx_t *mlx = player->mlx;
 
-    float move_forward = 0;
-    float move_sideways = 0;
-    float rot_speed = 0.02f;
-    float move_speed = 2.0f; //-rate independent
+    int move_forward = 0;
+    int move_sideways = 0;
+
+    double rot_speed = 0.5;
+    int move_speed = 10;
 
     if (mlx_is_key_down(mlx, MLX_KEY_ESCAPE))
         mlx_close_window(mlx);
 
-    // Movement inputs
-    if (mlx_is_key_down(mlx, MLX_KEY_W))
+    if (mlx_is_key_down(mlx, MLX_KEY_W) || mlx_is_key_down(mlx, MLX_KEY_UP))
         move_forward = move_speed;
-    if (mlx_is_key_down(mlx, MLX_KEY_S))
+    if (mlx_is_key_down(mlx, MLX_KEY_S) || mlx_is_key_down(mlx, MLX_KEY_DOWN))
         move_forward = -move_speed;
 
     if (mlx_is_key_down(mlx, MLX_KEY_A))
@@ -138,7 +137,6 @@ void move_player(void *param)
     if (mlx_is_key_down(mlx, MLX_KEY_D))
         move_sideways = move_speed;
 
-    // Rotation inputs
     if (mlx_is_key_down(mlx, MLX_KEY_LEFT))
         player->direction_angle -= rot_speed;
     if (mlx_is_key_down(mlx, MLX_KEY_RIGHT))
@@ -146,28 +144,32 @@ void move_player(void *param)
     
     player->direction_angle = normalize_angle(player->direction_angle);
 
-    // Calculate movement vectors
-    float forward_x = cosf(player->direction_angle) * move_forward;
-    float forward_y = sinf(player->direction_angle) * move_forward;
+    int forward_x = cos(player->direction_angle) * move_forward;
+    printf("cos %d\n", forward_x);
+    int forward_y = sin(player->direction_angle) * move_forward;
+    printf("sin %d\n", forward_y);
     
-    float strafe_angle = player->direction_angle + PI/2.0f;
-    float strafe_x = cosf(strafe_angle) * move_sideways;
-    float strafe_y = sinf(strafe_angle) * move_sideways;
+    float strafe_angle = player->direction_angle + PI/2;
 
-    // Update position (add to current position)
-    player->img->instances->x += forward_x + strafe_x;
-    player->img->instances->y += forward_y + strafe_y;
+    int strafe_x = cos(strafe_angle) * move_sideways;
+    int strafe_y = sin(strafe_angle) * move_sideways;
 
-    // Update direction indicator
+    int start_x = forward_x + strafe_x;
+    int start_y = forward_y + strafe_y;
+
+    player->img->instances->x += start_x;
+    player->img->instances->y += start_y;
+
     memset(player->direction_ray->pixels, 0, 
           player->direction_ray->width * player->direction_ray->height * sizeof(int32_t));
-    
-    float end_x = player->img->instances->x + cosf(player->direction_angle) * 60.0f;
-    float end_y = player->img->instances->y + sinf(player->direction_angle) * 60.0f;
+
+    int end_x = player->img->instances->x + (cos(player->direction_angle) * 500);
+    int end_y = player->img->instances->y + (sin(player->direction_angle) * 500);
+
     draw_line(player->direction_ray, 
              player->img->instances->x, 
              player->img->instances->y, 
-             end_x, end_y, 0xFF0000FF);
+             end_x , end_y, 0xFF0000FF);
 }
 
 int main()
@@ -175,7 +177,7 @@ int main()
     char **map = create_dynamic_map();
     t_player player;
     player.size = 4;
-    player.direction_angle = deg_to_radian(0);
+    player.direction_angle = deg_to_radian(-90);
 
     int SCREEN_WIDTH = strlen(*map) * TILE_SIZE;
     int SCREEN_HEIGHT = 9 * TILE_SIZE;
@@ -191,6 +193,7 @@ int main()
 
     int start_x = 5 * TILE_SIZE - player.size/2;
     int start_y = 3 * TILE_SIZE - player.size/2;
+
     player.img = mlx_new_image(mlx, player.size, player.size);
     for (int y = 0; y < player.size; y++) {
         for (int x = 0; x < player.size; x++) {
@@ -202,10 +205,12 @@ int main()
     player.direction_ray = mlx_new_image(mlx, SCREEN_WIDTH, SCREEN_HEIGHT);
     mlx_image_to_window(mlx, player.direction_ray, 0, 0);
 
-    float player_center_x = start_x + player.size/2;
-    float player_center_y = start_y + player.size/2;
-    float end_x = player_center_x + cos(player.direction_angle) * 60;
-    float end_y = player_center_y + sin(player.direction_angle) * 60;
+    int player_center_x = start_x + player.size/2;
+    int player_center_y = start_y + player.size/2;
+
+    int end_x = player_center_x + cos(player.direction_angle) * 60;
+    int end_y = player_center_y + sin(player.direction_angle) * 60;
+
     draw_line(player.direction_ray, player_center_x, player_center_y, end_x, end_y, 0xFF0000FF);
 
     mlx_loop_hook(mlx, move_player, &player);
