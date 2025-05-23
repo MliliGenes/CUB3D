@@ -157,6 +157,16 @@
                 </div>
             </div>
         </div>
+
+        <div class="explanation">
+            <h2>Key Insights:</h2>
+            <ul>
+                <li><strong>Grid-based stepping:</strong> Instead of checking every pixel, we jump efficiently between grid lines</li>
+                <li><strong>Delta distances:</strong> Pre-calculate how far the ray travels per grid step</li>
+                <li><strong>Side tracking:</strong> Keep track of whether we hit a vertical or horizontal wall (affects lighting in 3D)</li>
+                <li><strong>Exact intersection:</strong> Calculate the precise distance to create accurate 3D projections</li>
+            </ul>
+        </div>
     </div>
 
     <script>
@@ -180,8 +190,8 @@
             [1,1,1,1,1,1,1,1,1,1]
         ];
         
-        let player = { x: 125, y: 125 };
-        let rayAngle = 0;
+        let player = { x: 225, y: 125 };
+        let rayAngle = 45;
         let animationSteps = [];
         let currentStep = 0;
         let isAnimating = false;
