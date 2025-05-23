@@ -4,7 +4,7 @@
 #include <string.h>
 #include <math.h>
 
-#define TILE_SIZE 64
+#define TILE_SIZE 32
 #define FOV 60
 #define PI 3.14159265358979323846
 
@@ -42,7 +42,7 @@ char **create_dynamic_map(void)
         "100000000010000000001",
         "101111010010101111101",
         "101000010000100000101",
-        "101011110111101110101",
+        "101011100111101110101",
         "101000000000000000101",
         "101111011111101111001",
         "100000000010000000001",
@@ -195,8 +195,8 @@ void cast_fov_rays(t_player *player, char **map)
     double player_x = player->img->instances->x + player->size / 2.0;
     double player_y = player->img->instances->y + player->size / 2.0;
     
-    int num_rays = 60;
-    double fov_radians = deg_to_radian(60);  // 60 degrees in radians
+    int num_rays = player->mlx->width;
+    double fov_radians = deg_to_radian(80);  // 60 degrees in radians
     double angle_step = fov_radians / num_rays;
     
     // Starting angle (left edge of FOV)
