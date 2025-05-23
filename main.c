@@ -196,8 +196,8 @@ void cast_fov_rays(t_player *player, char **map)
     double player_x = player->img->instances->x + player->size / 2.0;
     double player_y = player->img->instances->y + player->size / 2.0;
     
-    int num_rays = 60;
-    double fov_radians = deg_to_radian(60);  // 60 degrees in radians
+    int num_rays = player->mlx->width;
+    double fov_radians = deg_to_radian(90);  // 60 degrees in radians
     double angle_step = fov_radians / num_rays;
     
     // Starting angle (left edge of FOV)
@@ -221,14 +221,50 @@ void cast_fov_rays(t_player *player, char **map)
         int end_y = (int)(player_y + ray_dir_y * wall_dist);
         
         // Choose color based on ray (center ray red, others yellow)
-        int color = (i == num_rays / 2) ? 0xFF0000FF : 0xFF0000FF;
+        int color = 0xFF0000FF;
         
         // Draw the ray
         draw_line(player->direction_ray, 
                  (int)player_x, (int)player_y, 
-                 end_x, end_y, color);
+                 end_x -1, end_y -1, color);
     }
 }
+
+int is_wall(t_player *player, int x, int y)
+{
+    // Convert pixel coordinates to map coordinates
+    int map_x = x / TILE_SIZE;
+    int map_y = y / TILE_SIZE;
+    
+    // Check bounds - make sure we don't go out of map
+    if (map_x < 0 || map_y < 0)
+        return (1); // Treat out of bounds as walls
+    
+    // Check if row exists
+    if (!player->map[map_y])
+        return (1);
+    
+    // Check if column exists in this row
+    if (map_x >= (int)strlen(player->map[map_y]))
+        return (1);
+    
+    // Check if position is a wall
+    return (player->map[map_y][map_x] == '1');
+}
+
+// Check collision for the player's square hitbox
+int check_collision_square(t_player *player, int new_x, int new_y)
+{
+    // Check all four corners of the player square
+    if (is_wall(player, new_x, new_y) ||                           // Top-left
+        is_wall(player, new_x + player->size - 1, new_y) ||        // Top-right
+        is_wall(player, new_x, new_y + player->size - 1) ||        // Bottom-left
+        is_wall(player, new_x + player->size - 1, new_y + player->size - 1)) // Bottom-right
+        return (1); // Collision detected
+    
+    return (0); // No collision
+}
+
 
 void move_player(void *param)
 {
@@ -238,8 +274,8 @@ void move_player(void *param)
     int move_forward = 0;
     int move_sideways = 0;
 
-    double rot_speed = PI/20;
-    double move_speed = 2;
+    double rot_speed = 0.02;
+    double move_speed = 1;
 
     if (mlx_is_key_down(mlx, MLX_KEY_ESCAPE))
         mlx_close_window(mlx);
@@ -273,11 +309,35 @@ void move_player(void *param)
 
     int move_x = (int)round(total_x);
     int move_y = (int)round(total_y);
-    player->reminder_x = total_x - move_x;
-    player->reminder_y = total_y - move_y;
-
-    player->img->instances->x += move_x;
-    player->img->instances->y += move_y;
+    
+      // Get current position
+    int current_x = player->img->instances->x;
+    int current_y = player->img->instances->y;
+    
+    // Calculate new positions
+    int new_x = current_x + move_x;
+    int new_y = current_y + move_y;
+    
+    // Separate X and Y collision checking for sliding along walls
+    int can_move_x = !check_collision_square(player, new_x, current_y);
+    int can_move_y = !check_collision_square(player, current_x, new_y);
+    
+    // Apply movement based on collision results
+    if (can_move_x)
+    {
+        player->img->instances->x = new_x;
+        player->reminder_x = total_x - move_x;
+    }
+    else
+        player->reminder_x = 0; // Reset reminder if we can't move
+    
+    if (can_move_y)
+    {
+        player->img->instances->y = new_y;
+        player->reminder_y = total_y - move_y;
+    }
+    else
+        player->reminder_y = 0; // Reset reminder if we can't move
 
     cast_fov_rays(player, player->map);
 }
@@ -286,7 +346,7 @@ int main()
 {
     char **map = create_dynamic_map();
     t_player player;
-    player.size = 4;
+    player.size = 6;
     player.reminder_x = 0;
     player.reminder_y = 0;
     player.direction_angle = deg_to_radian(90);
@@ -309,10 +369,10 @@ int main()
     player.img = mlx_new_image(mlx, player.size, player.size);
     for (int y = 0; y < player.size; y++) {
         for (int x = 0; x < player.size; x++) {
-            mlx_put_pixel(player.img, x, y, 0xFF0000FF);
+            mlx_put_pixel(player.img, x, y, 0x000000FF);
         }
     }
-    mlx_image_to_window(mlx, player.img, start_x, start_y);
+    mlx_image_to_window(mlx, player.img, start_x + TILE_SIZE / 2, start_y + TILE_SIZE /2);
 
     player.direction_ray = mlx_new_image(mlx, SCREEN_WIDTH, SCREEN_HEIGHT);
     mlx_image_to_window(mlx, player.direction_ray, 0, 0);
