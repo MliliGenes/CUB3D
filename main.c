@@ -197,7 +197,7 @@ void cast_fov_rays(t_player *player, char **map)
     double player_y = player->img->instances->y + player->size / 2.0;
     
     int num_rays = player->mlx->width;
-    double fov_radians = deg_to_radian(90);  // 60 degrees in radians
+    double fov_radians = deg_to_radian(60);  // 60 degrees in radians
     double angle_step = fov_radians / num_rays;
     
     // Starting angle (left edge of FOV)
