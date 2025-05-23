@@ -108,12 +108,11 @@ void draw_square(mlx_image_t *img, int x, int y, int color)
     }
 }
 
-void build_map(char **map, mlx_image_t *img)
-{
+void build_map(char **map, mlx_image_t *img) {
     for (int i = 0; map[i]; i++) {
         for (int j = 0; map[i][j]; j++) {
             draw_square(img, j * TILE_SIZE, i * TILE_SIZE, 
-                       map[i][j] == '1' ? 0x101010FF : 0xA0A0A0FF);
+                       map[i][j] == '1' ? 0x000000FF : 0xFFFFFFFF);
         }
     }
 }
@@ -196,7 +195,7 @@ void cast_fov_rays(t_player *player, char **map)
     double player_x = player->img->instances->x + player->size / 2.0;
     double player_y = player->img->instances->y + player->size / 2.0;
     
-    int num_rays = player->mlx->width;
+    int num_rays = 60;
     double fov_radians = deg_to_radian(60);  // 60 degrees in radians
     double angle_step = fov_radians / num_rays;
     
@@ -226,7 +225,7 @@ void cast_fov_rays(t_player *player, char **map)
         // Draw the ray
         draw_line(player->direction_ray, 
                  (int)player_x, (int)player_y, 
-                 end_x -1, end_y -1, color);
+                 end_x, end_y, color);
     }
 }
 
@@ -274,8 +273,8 @@ void move_player(void *param)
     int move_forward = 0;
     int move_sideways = 0;
 
-    double rot_speed = 0.02;
-    double move_speed = 1;
+    double rot_speed = 0.04;
+    double move_speed = 2;
 
     if (mlx_is_key_down(mlx, MLX_KEY_ESCAPE))
         mlx_close_window(mlx);
@@ -369,7 +368,7 @@ int main()
     player.img = mlx_new_image(mlx, player.size, player.size);
     for (int y = 0; y < player.size; y++) {
         for (int x = 0; x < player.size; x++) {
-            mlx_put_pixel(player.img, x, y, 0x000000FF);
+            mlx_put_pixel(player.img, x, y, 0xFF0000FF);
         }
     }
     mlx_image_to_window(mlx, player.img, start_x + TILE_SIZE / 2, start_y + TILE_SIZE /2);

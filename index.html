@@ -3,445 +3,1380 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Raycasting Algorithm Visualization</title>
+    <title>DDA Algorithm Visualization</title>
+    <meta name="description" content="A step-by-step visualization of the Digital Differential Analyzer (DDA) ray casting algorithm. Explore how rays traverse a grid to find walls.">
+    <meta name="keywords" content="DDA, algorithm, visualization, ray casting, computer graphics, interactive, game development, rendering">
+    <link rel="icon" type="image/x-icon" href="favicon.png">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
         body {
-            font-family: Arial, sans-serif;
-            background: #1a1a1a;
-            color: white;
+            font-family: 'JetBrains Mono', monospace;
+            background-color: #222; /* Darker gray background */
+            color: #ddd; /* Light gray text */
             margin: 0;
             padding: 20px;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .visualization {
             display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
             gap: 20px;
-            margin: 20px 0;
-        }
-        .map-container {
-            flex: 1;
-        }
-        canvas {
-            border: 2px solid #444;
-            background: #222;
-        }
-        .controls {
-            margin: 20px 0;
+            max-width: 1200px;
+            width: 100%;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.4); /* Darker shadow */
+            border-radius: 10px;
+            overflow: hidden;
+            background-color: #333; /* Medium gray background */
             padding: 20px;
-            background: #333;
+            border: 1px solid #555; /* Subtle border */
+        }
+
+        .header {
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #555; /* Gray border */
+        }
+
+        .header h1 {
+            color: #eee; /* White heading */
+            margin-bottom: 5px;
+            font-size: 2.5em;
+        }
+
+        .header p {
+            color: #bbb; /* Lighter gray paragraph */
+            font-size: 1.1em;
+        }
+
+        .explanation-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .explanation-section h2 {
+            width: 100%;
+            text-align: center;
+            color: #ccc; /* Light gray heading */
+            margin-bottom: 15px;
+            font-size: 1.8em;
+        }
+
+        .concept-box {
+            background-color: #444; /* Darker gray box */
+            border: 1px solid #777; /* Gray border */
             border-radius: 8px;
-        }
-        .control-group {
-            margin: 10px 0;
-        }
-        label {
-            display: inline-block;
-            width: 120px;
-            margin-right: 10px;
-        }
-        input[type="range"] {
-            width: 200px;
-        }
-        button {
-            background: #555;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin: 5px;
-        }
-        button:hover {
-            background: #666;
-        }
-        .explanation {
-            background: #2a2a2a;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-        }
-        .step {
-            margin: 15px 0;
             padding: 15px;
-            background: #333;
-            border-left: 4px solid #4CAF50;
-            border-radius: 4px;
+            flex: 1;
+            min-width: 300px;
+            max-width: 48%;
+            box-sizing: border-box;
         }
-        .math {
-            background: #1e3a5f;
+
+        .concept-box h3 {
+            color: #eee; /* White heading */
+            margin-top: 0;
+            border-bottom: 1px solid #777; /* Gray border */
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+
+        .concept-box p {
+            font-size: 0.95em;
+            color: #ddd; /* Light gray text */
+        }
+
+        .concept-box .formula {
+            background-color: #555; /* Slightly lighter gray formula background */
+            border-left: 3px solid #999; /* Medium gray border */
+            padding: 10px;
+            margin: 10px 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+            color: #eee; /* White text */
+        }
+
+        .main-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .canvas-container {
+            background-color: #000; /* Black canvas background */
+            border: 2px solid #555; /* Gray border */
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.6); /* Darker shadow */
+            flex-grow: 1;
+            flex-shrink: 1;
+            min-width: 320px;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .status-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(0, 0, 0, 0.8); /* Semi-transparent black */
+            color: #fff;
+            padding: 8px 15px;
+            font-size: 0.8em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            white-space: nowrap;
+            overflow-x: auto;
+        }
+
+        .status-bar .key {
+            background-color: #555; /* Medium gray key background */
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: #eee; /* White key text */
+        }
+
+        .controls {
+            flex: 1;
+            min-width: 300px;
+            background-color: #444; /* Darker gray controls background */
+            border: 1px solid #777; /* Gray border */
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .control-group h3 {
+            color: #eee; /* White heading */
+            margin-top: 0;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #777; /* Gray border */
+            padding-bottom: 5px;
+        }
+
+        .map-input {
+            width: calc(100% - 10px);
+            height: 120px;
+            background-color: #555; /* Input background */
+            border: 1px solid #777; /* Input border */
+            color: #eee; /* Input text color */
+            padding: 5px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+            border-radius: 4px;
+            resize: vertical;
+        }
+
+        button {
+            background-color: #777; /* Medium gray button */
+            color: #eee; /* White button text */
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+            font-weight: bold;
+            transition: background-color 0.2s, transform 0.1s;
+            flex-shrink: 0;
+        }
+
+        button:hover {
+            background-color: #999; /* Lighter gray on hover */
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .zoom-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .zoom-buttons button {
+            flex-grow: 1;
+        }
+
+        .slider-container {
+            margin-bottom: 10px;
+        }
+
+        .slider-container label {
+            display: block;
+            margin-bottom: 5px;
+            color: #bbb; /* Light gray label */
+        }
+
+        input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            height: 8px;
+            background: #555; /* Slider track background */
+            border-radius: 5px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #eee; /* White slider thumb */
+            cursor: pointer;
+            border: 2px solid #bbb; /* Light gray border */
+        }
+
+        .value-display {
+            font-size: 0.9em;
+            color: #eee; /* White value display */
+            margin-top: 5px;
+        }
+
+        .math-display {
+            background-color: #555; /* Math display background */
+            border: 1px solid #777; /* Math display border */
             padding: 10px;
             border-radius: 4px;
-            font-family: monospace;
-            margin: 10px 0;
+            font-size: 0.9em;
+            color: #eee; /* White math text */
+        }
+
+        .math-display div {
+            margin-bottom: 5px;
+        }
+
+        .math-display .highlight {
+            color: #fff; /* White highlight for math */
+            font-weight: bold;
+        }
+
+        .info-panel {
+            background-color: #444; /* Info panel background */
+            border: 1px solid #777; /* Info panel border */
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .info-panel h3 {
+            color: #eee; /* White heading */
+        }
+
+        .step-info {
+            white-space: pre-wrap;
+            font-size: 1em;
+            color: #ddd; /* Light gray step info text */
+        }
+
+        @media (max-width: 900px) {
+            .main-section, .explanation-section {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .concept-box, .controls {
+                max-width: 100%;
+            }
+
+            .canvas-container {
+                width: 100%;
+                display: flex;
+                justify-content: center;
+            }
+            canvas {
+                max-width: 100%;
+                height: auto;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Raycasting Algorithm Explained</h1>
-        
-        <div class="visualization">
-            <div class="map-container">
-                <canvas id="mapCanvas" width="500" height="500"></canvas>
-                <p>Interactive 2D Map - Click to move player, drag to aim</p>
-            </div>
+        <div class="header">
+            <h1>DDA ALGORITHM VISUALIZATION</h1>
+            <p>Advanced Ray Casting Step-by-Step Analysis</p>
         </div>
 
-        <div class="controls">
-            <div class="control-group">
-                <label>Ray Angle:</label>
-                <input type="range" id="rayAngle" min="0" max="360" value="0" step="1">
-                <span id="angleValue">0°</span>
-            </div>
-            <div class="control-group">
-                <button onclick="animateRay()">Animate Ray Step-by-Step</button>
-                <button onclick="toggleAnimation()">Toggle Auto Animation</button>
-                <button onclick="resetDemo()">Reset</button>
-            </div>
-        </div>
+        <div class="explanation-section">
+            <h2>Understanding Delta Distances & The "1 Unit" Concept</h2>
 
-        <div class="explanation">
-            <h2>How the Algorithm Works:</h2>
-            
-            <div class="step">
-                <h3>Step 1: Setup</h3>
-                <p>We start with a player position and a ray direction. The algorithm needs to find where this ray first hits a wall.</p>
-                <div class="math">
-                    pos_x = player_x / TILE_SIZE<br>
-                    pos_y = player_y / TILE_SIZE
+            <div class="concept-box">
+                <h3>What is "1 Unit"?</h3>
+                <p>In DDA, <strong>"1 unit"</strong> means <strong>1 grid cell</strong>. When we say the ray travels to
+                    check the next intersection, we're moving from one grid line to the next.</p>
+                <div class="formula">
+                    Grid Cell = 1 Unit Square<br>
+                    Each grid line is 1 unit apart
                 </div>
             </div>
 
-            <div class="step">
-                <h3>Step 2: Calculate Delta Distances</h3>
-                <p>This is the key insight! Instead of checking every tiny point along the ray, we calculate how far the ray travels between grid lines.</p>
-                <div class="math">
+            <div class="concept-box">
+                <h3>Delta Distance Explained</h3>
+                <p><strong>delta_dist_x</strong> = How far the ray travels along its path to cross 1 vertical grid line
+                </p>
+                <p><strong>delta_dist_y</strong> = How far the ray travels along its path to cross 1 horizontal grid
+                    line</p>
+                <div class="formula">
                     delta_dist_x = |1 / ray_dir_x|<br>
                     delta_dist_y = |1 / ray_dir_y|
                 </div>
-                <p><strong>Why this works:</strong> If the ray direction is (0.5, 0.8), then delta_dist_x = 2.0 means the ray travels 2 units of distance for every 1 unit it moves in the X direction.</p>
+                <p><em>Think of it as: "If I want to move 1 grid cell horizontally, how much total distance do I travel
+                        along my ray?"</em></p>
             </div>
+        </div>
 
-            <div class="step">
-                <h3>Step 3: Determine Step Direction</h3>
-                <p>Figure out which direction we're stepping in the grid (+1 or -1) and calculate the initial distance to the next grid line.</p>
-                <div class="math">
-                    if (ray_dir_x < 0): step_x = -1, side_dist_x = (pos_x - map_x) * delta_dist_x<br>
-                    else: step_x = 1, side_dist_x = (map_x + 1 - pos_x) * delta_dist_x
+        <div class="main-section">
+            <div class="canvas-container">
+                <canvas id="canvas"></canvas>
+                <div class="status-bar">
+                    <strong>CONTROLS:</strong>
+                    <span class="key">W/S</span> Move Player (Forward/Backward along ray) •
+                    <span class="key">←/→</span> Rotate Ray •
+                    <span class="key">Click</span> Place Player
                 </div>
             </div>
 
-            <div class="step">
-                <h3>Step 4: DDA (Digital Differential Analyzer)</h3>
-                <p>This is where the magic happens! We "step" along the ray by jumping from grid line to grid line, always choosing the closest one.</p>
-                <div class="math">
-                    while (not hit):<br>
-                    &nbsp;&nbsp;if (side_dist_x < side_dist_y):<br>
-                    &nbsp;&nbsp;&nbsp;&nbsp;step in X direction<br>
-                    &nbsp;&nbsp;else:<br>
-                    &nbsp;&nbsp;&nbsp;&nbsp;step in Y direction<br>
-                    &nbsp;&nbsp;check if we hit a wall
+            <div class="controls">
+                <div class="control-group">
+                    <h3>Map Input</h3>
+                    <textarea id="mapInput" class="map-input" placeholder="Enter map (1=wall, 0=empty):
+11111111
+10000001
+10100101
+10000001
+10101001
+10000001
+10010001
+11111111"></textarea>
+                    <button id="loadMapBtn">Load Map</button>
+                    <div class="zoom-buttons">
+                        <button id="zoomInBtn">Zoom In (+)</button>
+                        <button id="zoomOutBtn">Zoom Out (-)</button>
+                    </div>
                 </div>
-                <p><strong>The genius:</strong> We never miss a wall because we check every grid cell the ray passes through, but we do it efficiently by jumping between grid lines!</p>
-            </div>
 
-            <div class="step">
-                <h3>Step 5: Calculate Final Distance</h3>
-                <p>Once we hit a wall, we calculate the exact distance from the player to the wall intersection point.</p>
-                <div class="math">
-                    if (side == 0): wall_dist = (map_x - pos_x + (1 - step_x) / 2) / ray_dir_x<br>
-                    else: wall_dist = (map_y - pos_y + (1 - step_y) / 2) / ray_dir_y
+                <div class="control-group">
+                    <h3>Ray Direction</h3>
+                    <div class="slider-container">
+                        <label>Ray Angle:</label>
+                        <input type="range" id="rayAngle" min="0" max="359" value="45" step="1">
+                        <div class="value-display">Angle: <span id="angleValue">45°</span></div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>Animation</h3>
+                    <button id="stepBtn">Step Through Algorithm</button>
+                    <button id="resetBtn">Reset</button>
+                    <div class="value-display">Step: <span id="stepCount">0</span></div>
+                </div>
+
+                <div class="control-group">
+                    <h3>Highlight Traveled</h3>
+                    <button id="toggleHighlight">Toggle Path Highlight</button>
+                </div>
+
+                <div class="control-group">
+                    <h3>Current Values</h3>
+                    <div class="math-display">
+                        <div>Player: (<span id="playerX">3.5</span>, <span id="playerY">3.5</span>)</div>
+                        <div>Ray Dir: (<span id="rayDirX">0.71</span>, <span id="rayDirY">0.71</span>)</div>
+                        <div class="highlight">Delta X: <span id="deltaX">1.41</span></div>
+                        <div class="highlight">Delta Y: <span id="deltaY">1.41</span></div>
+                        <div>Side Dist X: <span id="sideDistX">0.71</span></div>
+                        <div>Side Dist Y: <span id="sideDistY">0.71</span></div>
+                        <div>Current Cell: (<span id="mapX">3</span>, <span id="mapY">3</span>)</div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="explanation">
-            <h2>Key Insights:</h2>
-            <ul>
-                <li><strong>Grid-based stepping:</strong> Instead of checking every pixel, we jump efficiently between grid lines</li>
-                <li><strong>Delta distances:</strong> Pre-calculate how far the ray travels per grid step</li>
-                <li><strong>Side tracking:</strong> Keep track of whether we hit a vertical or horizontal wall (affects lighting in 3D)</li>
-                <li><strong>Exact intersection:</strong> Calculate the precise distance to create accurate 3D projections</li>
-            </ul>
+        <div class="info-panel">
+            <h3 style="color: #eee; margin-bottom: 15px;">ALGORITHM STEP INFORMATION</h3>
+            <div id="stepInfo" class="step-info">
+                Click "Step Through Algorithm" to see each step explained
+            </div>
+        </div>
+
+        <div class="explanation-section">
+            <h2>How Side Distance Calculation Works</h2>
+
+            <div class="concept-box">
+                <h3>Initial Side Distance (First Intersection)</h3>
+                <p>Since the player can be <strong>anywhere</strong> in a grid cell (not just at grid intersections), we
+                    need to calculate how far to the <strong>first</strong> grid line crossing:</p>
+
+                <div class="formula">
+                    If ray goes RIGHT (ray_dir_x > 0):<br>
+                    side_dist_x = (next_vertical_line - player_x) * delta_dist_x<br>
+                    side_dist_x = (map_x + 1 - player_x) * delta_dist_x<br><br>
+
+                    If ray goes LEFT (ray_dir_x < 0):<br>
+                        side_dist_x = (player_x - current_vertical_line) * delta_dist_x<br>
+                        side_dist_x = (player_x - map_x) * delta_dist_x
+                </div>
+
+                <p><strong>Example:</strong> If player is at (3.7, 3.2) and ray goes right:</p>
+                <div class="formula">
+                    map_x = floor(3.7) = 3<br>
+                    Next vertical line = 4.0<br>
+                    Distance to line = 4.0 - 3.7 = 0.3 grid units<br>
+                    side_dist_x = 0.3 * delta_dist_x
+                </div>
+            </div>
+
+            <div class="concept-box">
+                <h3>DDA Loop: Adding Delta Values</h3>
+                <p>After the first intersection, each step adds the full <strong>delta distance</strong> because we're
+                    moving exactly 1 full grid cell:</p>
+
+                <div class="formula">
+                    In each loop iteration:<br>
+                    side_dist_x += delta_dist_x (move 1 grid cell right/left)<br>
+                    side_dist_y += delta_dist_y (move 1 grid cell up/down)
+                </div>
+
+                <p><strong>Why this works:</strong> Delta distance is the distance for 1 grid cell, so adding it gives
+                    us the distance to the next grid line.</p>
+            </div>
         </div>
     </div>
 
     <script>
-        const canvas = document.getElementById('mapCanvas');
+        const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        const TILE_SIZE = 50;
-        const MAP_WIDTH = 10;
-        const MAP_HEIGHT = 10;
-        
-        // Simple map (1 = wall, 0 = empty)
-        const map = [
-            [1,1,1,1,1,1,1,1,1,1],
-            [1,0,0,0,0,0,0,0,0,1],
-            [1,0,1,1,0,0,1,0,0,1],
-            [1,0,0,1,0,0,1,0,0,1],
-            [1,0,0,0,0,0,0,0,0,1],
-            [1,0,1,0,0,1,1,1,0,1],
-            [1,0,1,0,0,0,0,0,0,1],
-            [1,0,0,0,1,0,0,1,0,1],
-            [1,0,0,0,0,0,0,0,0,1],
-            [1,1,1,1,1,1,1,1,1,1]
-        ];
-        
-        let player = { x: 225, y: 125 };
-        let rayAngle = 45;
+        // Game state
+        let playerX = 3.3;
+        let playerY = 3.7;
+        let rayAngle = 45; // Degrees
+        let isAnimating = false;
         let animationSteps = [];
         let currentStep = 0;
-        let isAnimating = false;
-        let autoAnimate = false;
-        
-        function drawMap() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw grid
-            ctx.strokeStyle = '#444';
-            ctx.lineWidth = 1;
-            for (let x = 0; x <= MAP_WIDTH; x++) {
-                ctx.beginPath();
-                ctx.moveTo(x * TILE_SIZE, 0);
-                ctx.lineTo(x * TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
-                ctx.stroke();
+        let autoInterval; // For animation steps
+        let animationFrameId; // For continuous movement/rotation animation frame
+
+        // Grid map (1 = wall, 0 = empty)
+        let map = [
+            [1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 1, 0, 0, 1, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 1, 0, 1, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 1, 0, 0, 0, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1]
+        ];
+
+        let GRID_SIZE = 80; // Pixels per grid unit
+        let GRID_WIDTH = 8; // Number of grid columns
+        let GRID_HEIGHT = 8; // Number of grid rows
+
+        // Keyboard controls
+        const keys = {};
+
+        let highlightTraveled = false;
+        const traveledCells = new Set(); // Stores 'x-y' strings for highlighted cells
+
+        // Constants for zoom and movement
+        const MIN_GRID_SIZE = 20;
+        const MAX_GRID_SIZE = 200;
+        const ZOOM_FACTOR = 1.1; // Multiplier for zooming
+        const PLAYER_MOVE_SPEED = 0.05; // Units per frame
+        const RAY_ROTATE_SPEED = 3; // Degrees per frame
+        const AUTO_STEP_DELAY = 500; // Milliseconds for auto-step (faster)
+
+
+        // Initialize map input textarea
+        document.getElementById('mapInput').value = map.map(row => row.join('')).join('\n');
+
+        // Event Listeners
+        document.addEventListener('keydown', (e) => {
+            if (e.repeat) return; // Prevent continuous keydown from triggering multiple times
+            keys[e.key.toLowerCase()] = true;
+            if (!animationFrameId) { // Only start animation frame loop if not already running
+                animationFrameId = requestAnimationFrame(gameLoop);
             }
-            for (let y = 0; y <= MAP_HEIGHT; y++) {
-                ctx.beginPath();
-                ctx.moveTo(0, y * TILE_SIZE);
-                ctx.lineTo(MAP_WIDTH * TILE_SIZE, y * TILE_SIZE);
-                ctx.stroke();
-            }
-            
-            // Draw walls
-            ctx.fillStyle = '#666';
-            for (let y = 0; y < MAP_HEIGHT; y++) {
-                for (let x = 0; x < MAP_WIDTH; x++) {
-                    if (map[y][x] === 1) {
-                        ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                    }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+            // If no keys are pressed that require continuous animation, stop the loop
+            if (!keys['w'] && !keys['s'] && !keys['arrowleft'] && !keys['arrowright']) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+                // Only reset DDA steps if animation is not active and no movement/rotation
+                if (!isAnimating) {
+                    resetAnimationInfo(); // Reset just the step-by-step info, not global state
                 }
+                draw(); // Redraw to update highlights based on final position
             }
-            
-            // Draw player
-            ctx.fillStyle = '#4CAF50';
-            ctx.beginPath();
-            ctx.arc(player.x, player.y, 8, 0, Math.PI * 2);
-            ctx.fill();
-        }
-        
-        function castRay(angle) {
-            const ray_dir_x = Math.cos(angle * Math.PI / 180);
-            const ray_dir_y = Math.sin(angle * Math.PI / 180);
-            
-            const pos_x = player.x / TILE_SIZE;
-            const pos_y = player.y / TILE_SIZE;
-            
-            let map_x = Math.floor(pos_x);
-            let map_y = Math.floor(pos_y);
-            
-            const delta_dist_x = Math.abs(1.0 / ray_dir_x);
-            const delta_dist_y = Math.abs(1.0 / ray_dir_y);
-            
-            let step_x, step_y, side_dist_x, side_dist_y;
-            
-            if (ray_dir_x < 0) {
-                step_x = -1;
-                side_dist_x = (pos_x - map_x) * delta_dist_x;
-            } else {
-                step_x = 1;
-                side_dist_x = (map_x + 1.0 - pos_x) * delta_dist_x;
-            }
-            
-            if (ray_dir_y < 0) {
-                step_y = -1;
-                side_dist_y = (pos_y - map_y) * delta_dist_y;
-            } else {
-                step_y = 1;
-                side_dist_y = (map_y + 1.0 - pos_y) * delta_dist_y;
-            }
-            
-            const steps = [];
-            let hit = false;
-            let side;
-            
-            while (!hit && map_x >= 0 && map_x < MAP_WIDTH && map_y >= 0 && map_y < MAP_HEIGHT) {
-                steps.push({
-                    map_x: map_x,
-                    map_y: map_y,
-                    side_dist_x: side_dist_x,
-                    side_dist_y: side_dist_y,
-                    pos_x: pos_x,
-                    pos_y: pos_y
-                });
-                
-                if (side_dist_x < side_dist_y) {
-                    side_dist_x += delta_dist_x;
-                    map_x += step_x;
-                    side = 0;
-                } else {
-                    side_dist_y += delta_dist_y;
-                    map_y += step_y;
-                    side = 1;
-                }
-                
-                if (map_x >= 0 && map_x < MAP_WIDTH && map_y >= 0 && map_y < MAP_HEIGHT && map[map_y][map_x] === 1) {
-                    hit = true;
-                }
-            }
-            
-            let wall_dist;
-            if (side === 0) {
-                wall_dist = (map_x - pos_x + (1 - step_x) / 2) / ray_dir_x;
-            } else {
-                wall_dist = (map_y - pos_y + (1 - step_y) / 2) / ray_dir_y;
-            }
-            
-            return {
-                distance: wall_dist * TILE_SIZE,
-                steps: steps,
-                hit_x: map_x,
-                hit_y: map_y,
-                ray_dir_x: ray_dir_x,
-                ray_dir_y: ray_dir_y
-            };
-        }
-        
-        function drawRay(result, stepIndex = -1) {
-            const ray_dir_x = result.ray_dir_x;
-            const ray_dir_y = result.ray_dir_y;
-            
-            // Draw full ray
-            ctx.strokeStyle = '#FFD700';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(player.x, player.y);
-            ctx.lineTo(player.x + ray_dir_x * result.distance, player.y + ray_dir_y * result.distance);
-            ctx.stroke();
-            
-            // Draw steps if animating
-            if (stepIndex >= 0 && stepIndex < result.steps.length) {
-                ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
-                for (let i = 0; i <= stepIndex; i++) {
-                    const step = result.steps[i];
-                    ctx.fillRect(step.map_x * TILE_SIZE, step.map_y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                }
-                
-                // Highlight current step
-                if (stepIndex < result.steps.length) {
-                    const currentStepData = result.steps[stepIndex];
-                    ctx.strokeStyle = '#FF0000';
-                    ctx.lineWidth = 3;
-                    ctx.strokeRect(currentStepData.map_x * TILE_SIZE, currentStepData.map_y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                }
-            }
-            
-            // Draw hit point
-            ctx.fillStyle = '#FF4444';
-            ctx.beginPath();
-            ctx.arc(player.x + ray_dir_x * result.distance, player.y + ray_dir_y * result.distance, 6, 0, Math.PI * 2);
-            ctx.fill();
-        }
-        
-        function updateVisualization() {
-            drawMap();
-            const result = castRay(rayAngle);
-            animationSteps = result.steps;
-            
-            if (isAnimating && currentStep < animationSteps.length) {
-                drawRay(result, currentStep);
-            } else {
-                drawRay(result);
-            }
-        }
-        
-        function animateRay() {
-            isAnimating = true;
-            currentStep = 0;
-            
-            const animate = () => {
-                updateVisualization();
-                currentStep++;
-                
-                if (currentStep <= animationSteps.length) {
-                    setTimeout(animate, 500);
-                } else {
-                    isAnimating = false;
-                    currentStep = 0;
-                }
-            };
-            
-            animate();
-        }
-        
-        function toggleAnimation() {
-            autoAnimate = !autoAnimate;
-            if (autoAnimate) {
-                const autoStep = () => {
-                    if (autoAnimate) {
-                        rayAngle = (rayAngle + 2) % 360;
-                        document.getElementById('rayAngle').value = rayAngle;
-                        document.getElementById('angleValue').textContent = rayAngle + '°';
-                        updateVisualization();
-                        setTimeout(autoStep, 50);
-                    }
-                };
-                autoStep();
-            }
-        }
-        
-        function resetDemo() {
-            player = { x: 125, y: 125 };
-            rayAngle = 0;
-            isAnimating = false;
-            autoAnimate = false;
-            currentStep = 0;
-            document.getElementById('rayAngle').value = 0;
-            document.getElementById('angleValue').textContent = '0°';
-            updateVisualization();
-        }
-        
-        // Event listeners
-        document.getElementById('rayAngle').addEventListener('input', function(e) {
+        });
+
+        document.getElementById('rayAngle').addEventListener('input', (e) => {
             rayAngle = parseInt(e.target.value);
             document.getElementById('angleValue').textContent = rayAngle + '°';
-            updateVisualization();
+            if (!isAnimating) { // Don't reset animation steps if actively stepping through
+                resetAnimationInfo(); // Reset just the step-by-step info
+            }
+            draw();
         });
-        
-        canvas.addEventListener('click', function(e) {
+
+        document.getElementById('stepBtn').addEventListener('click', stepThroughAlgorithm);
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            resetAnimation(); // Full reset for player, map, and animation
+            draw();
+        });
+        document.getElementById('loadMapBtn').addEventListener('click', loadMapFromInput);
+        document.getElementById('toggleHighlight').addEventListener('click', () => {
+            highlightTraveled = !highlightTraveled;
+            traveledCells.clear(); // Clear highlights when toggling off/on
+            draw(); // Redraw immediately to reflect toggle
+        });
+        document.getElementById('zoomInBtn').addEventListener('click', zoomIn);
+        document.getElementById('zoomOutBtn').addEventListener('click', zoomOut);
+
+
+        canvas.addEventListener('click', (e) => {
+            // Get click coordinates relative to canvas
             const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
-            const map_x = Math.floor(x / TILE_SIZE);
-            const map_y = Math.floor(y / TILE_SIZE);
-            
-            if (map_x >= 0 && map_x < MAP_WIDTH && map_y >= 0 && map_y < MAP_HEIGHT && map[map_y][map_x] === 0) {
-                player.x = x;
-                player.y = y;
-                updateVisualization();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+
+            // Convert pixel coordinates to grid coordinates
+            const gridX = clickX / GRID_SIZE;
+            const gridY = clickY / GRID_SIZE;
+
+            // Ensure click is within map bounds and on an empty cell
+            if (gridX >= 0 && gridX < GRID_WIDTH && gridY >= 0 && gridY < GRID_HEIGHT && mapCheck(gridX, gridY) === 0) {
+                playerX = gridX;
+                playerY = gridY;
+                if (!isAnimating) { // Don't reset animation steps if actively stepping through
+                    resetAnimationInfo(); // Reset just the step-by-step info
+                }
+                draw();
             }
         });
-        
-        canvas.addEventListener('mousemove', function(e) {
-            if (e.buttons === 1) {
-                const rect = canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                
-                const angle = Math.atan2(y - player.y, x - player.x) * 180 / Math.PI;
-                rayAngle = angle;
-                document.getElementById('rayAngle').value = angle;
-                document.getElementById('angleValue').textContent = Math.round(angle) + '°';
-                updateVisualization();
+
+        // Game loop for continuous movement and rotation
+        function gameLoop() {
+            let moved = false;
+            const rayDirX = Math.cos(rayAngle * Math.PI / 180);
+            const rayDirY = Math.sin(rayAngle * Math.PI / 180);
+
+            // Movement
+            if (keys['w']) {
+                const targetX = playerX + rayDirX * PLAYER_MOVE_SPEED;
+                const targetY = playerY + rayDirY * PLAYER_MOVE_SPEED;
+                if (mapCheck(targetX, targetY) === 0) { // Only check the center of the next cell
+                    playerX = targetX;
+                    playerY = targetY;
+                    moved = true;
+                }
+            }
+            if (keys['s']) {
+                const targetX = playerX - rayDirX * PLAYER_MOVE_SPEED;
+                const targetY = playerY - rayDirY * PLAYER_MOVE_SPEED;
+                if (mapCheck(targetX, targetY) === 0) { // Only check the center of the next cell
+                    playerX = targetX;
+                    playerY = targetY;
+                    moved = true;
+                }
+            }
+
+            // Rotation
+            if (keys['arrowleft']) {
+                rayAngle = (rayAngle - RAY_ROTATE_SPEED + 360) % 360;
+                document.getElementById('rayAngle').value = rayAngle;
+                document.getElementById('angleValue').textContent = rayAngle + '°';
+                moved = true; // Consider rotation as a "change" that requires redraw
+            }
+            if (keys['arrowright']) {
+                rayAngle = (rayAngle + RAY_ROTATE_SPEED) % 360;
+                document.getElementById('rayAngle').value = rayAngle;
+                document.getElementById('angleValue').textContent = rayAngle + '°';
+                moved = true; // Consider rotation as a "change" that requires redraw
+            }
+
+            if (moved) {
+                if (!isAnimating) { // If not in step-by-step mode, clear and recalculate highlights
+                    traveledCells.clear();
+                }
+                resetAnimationInfo(); // Reset just the step-by-step info
+                draw();
+            }
+
+            // Continue the loop if any relevant keys are held down
+            if (keys['w'] || keys['s'] || keys['arrowleft'] || keys['arrowright']) {
+                animationFrameId = requestAnimationFrame(gameLoop);
+            } else {
+                animationFrameId = null; // Stop the loop
+            }
+        }
+
+        /**
+         * Returns the map value at a given (sub-grid) coordinate,
+         * treating out-of-bounds as a wall.
+         * For movement, this checks if the *center* of the target cell is walkable.
+         * @param {number} x
+         * @param {number} y
+         * @returns {number} 1 for wall, 0 for empty, or handles out of bounds.
+         */
+        function mapCheck(x, y) {
+            const currentMapX = Math.floor(x);
+            const currentMapY = Math.floor(y);
+            if (currentMapX < 0 || currentMapX >= GRID_WIDTH || currentMapY < 0 || currentMapY >= GRID_HEIGHT) {
+                return 1; // Treat out of bounds as a wall
+            }
+            return map[currentMapY][currentMapX];
+        }
+
+        // Handles loading a custom map from the textarea
+        function loadMapFromInput() {
+            const input = document.getElementById('mapInput').value.trim();
+            const lines = input.split('\n').filter(line => line.trim());
+
+            if (lines.length === 0) {
+                alert('Please enter a map. Example:\n111\n101\n111');
+                return;
+            }
+
+            const newMap = [];
+            let tempGridWidth = 0;
+            for (let line of lines) {
+                const row = [];
+                for (let char of line.trim()) {
+                    if (char === '1' || char === '0') {
+                        row.push(parseInt(char));
+                    }
+                }
+                if (row.length > 0) {
+                    if (tempGridWidth === 0) {
+                        tempGridWidth = row.length; // Set width from first valid row
+                    } else if (row.length !== tempGridWidth) {
+                        alert('Error: All map rows must have the same number of columns.');
+                        return;
+                    }
+                    newMap.push(row);
+                }
+            }
+
+            if (newMap.length > 0 && newMap[0].length > 0) {
+                map = newMap;
+                GRID_HEIGHT = map.length;
+                GRID_WIDTH = map[0].length;
+
+                // Adjust canvas size based on new map dimensions
+                resizeCanvasToMap();
+
+                // Reset player position if outside new map or on a wall
+                if (playerX >= GRID_WIDTH || playerY >= GRID_HEIGHT || mapCheck(playerX, playerY) === 1) {
+                    let foundEmpty = false;
+                    for (let y = 0; y < GRID_HEIGHT; y++) {
+                        for (let x = 0; x < GRID_WIDTH; x++) {
+                            if (map[y][x] === 0) {
+                                playerX = x + 0.5; // Center player in the cell
+                                playerY = y + 0.5;
+                                foundEmpty = true;
+                                break;
+                            }
+                        }
+                        if (foundEmpty) break;
+                    }
+                    if (!foundEmpty) {
+                        alert('Warning: Map contains no empty spaces! Player placed at (0.5, 0.5).');
+                        playerX = 0.5;
+                        playerY = 0.5;
+                    }
+                }
+
+                resetAnimation(); // Full reset after map change
+                draw();
+            }
+        }
+
+        // Adjusts canvas dimensions and GRID_SIZE based on current map to fit in max space
+        function resizeCanvasToMap() {
+            const maxCanvasDim = 700; // Max pixels for canvas width/height
+            const desiredGridSize = Math.floor(maxCanvasDim / Math.max(GRID_WIDTH, GRID_HEIGHT));
+            GRID_SIZE = Math.max(MIN_GRID_SIZE, Math.min(desiredGridSize, MAX_GRID_SIZE)); // Clamp between min/max
+
+            canvas.width = GRID_WIDTH * GRID_SIZE;
+            canvas.height = GRID_HEIGHT * GRID_SIZE;
+        }
+
+        function zoomIn() {
+            const newGridSize = GRID_SIZE * ZOOM_FACTOR;
+            if (newGridSize <= MAX_GRID_SIZE) {
+                GRID_SIZE = newGridSize;
+                canvas.width = GRID_WIDTH * GRID_SIZE;
+                canvas.height = GRID_HEIGHT * GRID_SIZE;
+                if (!isAnimating) { // If not in step-by-step mode, clear and recalculate highlights
+                    traveledCells.clear();
+                }
+                resetAnimationInfo(); // Reset just the step-by-step info after zoom
+                draw();
+            }
+        }
+
+        function zoomOut() {
+            const newGridSize = GRID_SIZE / ZOOM_FACTOR;
+            if (newGridSize >= MIN_GRID_SIZE) {
+                GRID_SIZE = newGridSize;
+                canvas.width = GRID_WIDTH * GRID_SIZE;
+                canvas.height = GRID_HEIGHT * GRID_SIZE;
+                if (!isAnimating) { // If not in step-by-step mode, clear and recalculate highlights
+                    traveledCells.clear();
+                }
+                resetAnimationInfo(); // Reset just the step-by-step info after zoom
+                draw();
+            }
+        }
+
+
+        // DDA Ray Casting Algorithm with step-by-step recording
+        function castRayWithSteps(startX, startY, rayDirX, rayDirY) {
+            const steps = [];
+
+            // Calculate delta distances (distance ray travels to move 1 unit in X or Y direction)
+            // Handle cases where ray is perfectly horizontal or vertical to avoid division by zero.
+            const deltaDistX = Math.abs(rayDirX === 0 ? Infinity : 1.0 / rayDirX);
+            const deltaDistY = Math.abs(rayDirY === 0 ? Infinity : 1.0 / rayDirY);
+
+            steps.push({
+                type: 'initial',
+                description: `Starting DDA Algorithm`,
+                playerX: startX,
+                playerY: startY,
+                rayDirX: rayDirX,
+                rayDirY: rayDirY,
+                deltaDistX: deltaDistX,
+                deltaDistY: deltaDistY,
+                explanation: `Ray direction: (${rayDirX.toFixed(3)}, ${rayDirY.toFixed(3)})\nDelta distances: X=${deltaDistX.toFixed(3)}, Y=${deltaDistY.toFixed(3)}\n\nDelta X means: "To move 1 grid cell horizontally, ray travels ${deltaDistX.toFixed(3)} units along its path"\nDelta Y means: "To move 1 grid cell vertically, ray travels ${deltaDistY.toFixed(3)} units along its path"`
+            });
+
+            // Current grid cell coordinates (integer)
+            let mapX = Math.floor(startX);
+            let mapY = Math.floor(startY);
+
+            // Calculate step direction (which way to move in X/Y) and initial side distances
+            // sideDistX: distance from start position to the first X-side (vertical grid line)
+            // sideDistY: distance from start position to the first Y-side (horizontal grid line)
+            let stepX, stepY;
+            let sideDistX, sideDistY;
+
+            if (rayDirX < 0) {
+                stepX = -1;
+                sideDistX = (startX - mapX) * deltaDistX;
+            } else {
+                stepX = 1;
+                sideDistX = (mapX + 1.0 - startX) * deltaDistX;
+            }
+
+            if (rayDirY < 0) {
+                stepY = -1;
+                sideDistY = (startY - mapY) * deltaDistY;
+            } else {
+                stepY = 1;
+                sideDistY = (mapY + 1.0 - startY) * deltaDistY;
+            }
+
+            steps.push({
+                type: 'setup',
+                description: `Calculate initial side distances`,
+                mapX: mapX,
+                mapY: mapY,
+                stepX: stepX,
+                stepY: stepY,
+                sideDistX: sideDistX,
+                sideDistY: sideDistY,
+                deltaDistX: deltaDistX,
+                deltaDistY: deltaDistY,
+                explanation: `Starting in grid cell (${mapX}, ${mapY})\nPlayer position: (${startX.toFixed(3)}, ${startY.toFixed(3)})\n\nInitial side distances:\nX: ${sideDistX.toFixed(3)} - distance to ${stepX > 0 ? 'right' : 'left'} vertical grid line\nY: ${sideDistY.toFixed(3)} - distance to ${stepY > 0 ? 'bottom' : 'top'} horizontal grid line\n\nThese are calculated from player's position to first grid line crossing.`
+            });
+
+            let hit = false;
+            let side = 0; // 0 = x-side hit, 1 = y-side hit
+            let loopCount = 0;
+
+            // DDA loop: step through the grid
+            // Limit loop count to prevent infinite loops on malformed maps or floating point errors
+            while (!hit && loopCount < (GRID_WIDTH + GRID_HEIGHT) * 2) {
+                const prevSideDistX = sideDistX; // Store for explanation
+                const prevSideDistY = sideDistY; // Store for explanation
+
+                // Check which side distance is smaller to determine next cell to step into
+                if (sideDistX < sideDistY) {
+                    sideDistX += deltaDistX; // Move to the next vertical grid line
+                    mapX += stepX; // Move one step in X direction
+                    side = 0; // Hit a vertical (X) side
+                } else {
+                    sideDistY += deltaDistY; // Move to the next horizontal grid line
+                    mapY += stepY; // Move one step in Y direction
+                    side = 1; // Hit a horizontal (Y) side
+                }
+
+                // Check if the current cell is a wall or out of bounds
+                const isOutOfBounds = (mapX < 0 || mapX >= GRID_WIDTH || mapY < 0 || mapY >= GRID_HEIGHT);
+                hit = isOutOfBounds || (map[mapY][mapX] === 1);
+
+
+                steps.push({
+                    type: 'step',
+                    description: `Step ${loopCount + 1}: Check grid cell (${mapX}, ${mapY})`,
+                    mapX: mapX,
+                    mapY: mapY,
+                    sideDistX: sideDistX,
+                    sideDistY: sideDistY,
+                    deltaDistX: deltaDistX,
+                    deltaDistY: deltaDistY,
+                    side: side,
+                    hit: hit,
+                    explanation: `Comparing distances:\nX side: ${(prevSideDistX).toFixed(3)}\nY side: ${(prevSideDistY).toFixed(3)}\n\n${side === 0 ? 'X was closer' : 'Y was closer'}, so we move ${side === 0 ? (stepX > 0 ? 'right' : 'left') : (stepY > 0 ? 'down' : 'up')}\n\nNew current cell: (${mapX}, ${mapY})\n${hit ? '🎯 HIT WALL!' : '✓ Empty cell, continue...'}\n\nAfter adding delta distance:\nX side: ${sideDistX.toFixed(3)}\nY side: ${sideDistY.toFixed(3)}`
+                });
+
+                loopCount++;
+            }
+
+            // Calculate final perpendicular distance to the wall (Euclidean distance)
+            let wallDist = Infinity;
+            if (hit) {
+                if (side === 0) { // X-side hit
+                    wallDist = (mapX - startX + (1 - stepX) / 2) / rayDirX;
+                } else { // Y-side hit
+                    wallDist = (mapY - startY + (1 - stepY) / 2) / rayDirY;
+                }
+            }
+
+
+            steps.push({
+                type: 'result',
+                description: `Final Result`,
+                wallDist: wallDist,
+                mapX: mapX, // Final cell where hit occurred
+                mapY: mapY, // Final cell where hit occurred
+                side: side,
+                explanation: `Wall found at distance: ${wallDist.toFixed(3)}\nHit ${side === 0 ? 'vertical' : 'horizontal'} wall at cell (${mapX}, ${mapY})\n\nDistance formula used:\n${side === 0 ?
+                    `(mapX - startX + (1 - stepX)/2) / rayDirX\n= (${mapX} - ${startX.toFixed(3)} + ${((1 - stepX) / 2).toFixed(1)}) / ${rayDirX.toFixed(3)}` :
+                    `(mapY - startY + (1 - stepY)/2) / rayDirY\n= (${mapY} - ${startY.toFixed(3)} + ${((1 - stepY) / 2).toFixed(1)}) / ${rayDirY.toFixed(3)}`
+                    }`
+            });
+
+            return steps;
+        }
+
+        /**
+         * Performs a DDA trace to get all grid cells the ray passes through.
+         * Used for continuous path highlighting.
+         */
+        function calculateRayPath(startX, startY, rayDirX, rayDirY) {
+            const pathCells = new Set(); // Use a Set to store unique 'x-y' strings
+
+            let mapX = Math.floor(startX);
+            let mapY = Math.floor(startY);
+            pathCells.add(`${mapX}-${mapY}`); // Add starting cell
+
+            const deltaDistX = Math.abs(rayDirX === 0 ? Infinity : 1.0 / rayDirX);
+            const deltaDistY = Math.abs(rayDirY === 0 ? Infinity : 1.0 / rayDirY);
+
+            let stepX, stepY;
+            let sideDistX, sideDistY;
+
+            if (rayDirX < 0) {
+                stepX = -1;
+                sideDistX = (startX - mapX) * deltaDistX;
+            } else {
+                stepX = 1;
+                sideDistX = (mapX + 1.0 - startX) * deltaDistX;
+            }
+
+            if (rayDirY < 0) {
+                stepY = -1;
+                sideDistY = (startY - mapY) * deltaDistY;
+            } else {
+                stepY = 1;
+                sideDistY = (mapY + 1.0 - startY) * deltaDistY;
+            }
+
+            let hit = false;
+            let loopCount = 0;
+            while (!hit && loopCount < (GRID_WIDTH + GRID_HEIGHT) * 2) {
+                if (sideDistX < sideDistY) {
+                    sideDistX += deltaDistX;
+                    mapX += stepX;
+                } else {
+                    sideDistY += deltaDistY;
+                    mapY += stepY;
+                }
+
+                const isOutOfBounds = (mapX < 0 || mapX >= GRID_WIDTH || mapY < 0 || mapY >= GRID_HEIGHT);
+                hit = isOutOfBounds || (map[mapY][mapX] === 1);
+
+                if (!hit) { // Only add if not a wall and not out of bounds
+                    pathCells.add(`${mapX}-${mapY}`);
+                }
+                loopCount++;
+            }
+            return pathCells;
+        }
+
+
+        // Main drawing function
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grid background
+            ctx.fillStyle = '#111'; /* Dark gray background */
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grid lines
+            ctx.strokeStyle = '#333'; /* Medium gray grid lines */
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= GRID_WIDTH; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * GRID_SIZE, 0);
+                ctx.lineTo(i * GRID_SIZE, GRID_HEIGHT * GRID_SIZE);
+                ctx.stroke();
+            }
+            for (let i = 0; i <= GRID_HEIGHT; i++) {
+                ctx.beginPath();
+                ctx.moveTo(0, i * GRID_SIZE);
+                ctx.lineTo(GRID_WIDTH * GRID_SIZE, i * GRID_SIZE);
+                ctx.stroke();
+            }
+
+            // Draw map walls
+            for (let y = 0; y < GRID_HEIGHT; y++) {
+                for (let x = 0; x < GRID_WIDTH; x++) {
+                    if (map[y][x] === 1) {
+                        ctx.fillStyle = '#666'; /* Darker gray wall */
+                        ctx.fillRect(x * GRID_SIZE, y * GRID_SIZE, GRID_SIZE, GRID_SIZE);
+
+                        // Add wall texture (inner darker rectangle)
+                        ctx.fillStyle = '#444'; /* Even darker gray texture */
+                        ctx.fillRect(x * GRID_SIZE + 2, y * GRID_SIZE + 2, GRID_SIZE - 4, GRID_SIZE - 4);
+                    }
+                }
+            }
+
+            // Calculate ray direction from angle
+            const rayDirX = Math.cos(rayAngle * Math.PI / 180);
+            const rayDirY = Math.sin(rayAngle * Math.PI / 180);
+
+            // Update info display values
+            updateDisplayValues(rayDirX, rayDirY);
+
+            // Handle highlighting independently
+            if (highlightTraveled && !isAnimating) { // If highlight is on and not in step-by-step mode
+                traveledCells.clear(); // Clear previous path
+                const path = calculateRayPath(playerX, playerY, rayDirX, rayDirY);
+                path.forEach(cell => traveledCells.add(cell));
+            } else if (!highlightTraveled && !isAnimating) { // If highlight is off and not animating
+                traveledCells.clear(); // Ensure highlights are truly off
+            }
+
+
+            // Draw dynamically highlighted traveled cells (always draws if highlightTraveled is true OR animating)
+            if (highlightTraveled || isAnimating) { // Draw if either highlight is on, or if animating
+                ctx.fillStyle = 'rgba(200, 200, 200, 0.2)'; /* Light gray transparent highlight */
+                traveledCells.forEach(key => {
+                    const [x, y] = key.split('-').map(Number);
+                    ctx.fillRect(x * GRID_SIZE, y * GRID_SIZE, GRID_SIZE, GRID_SIZE);
+                });
+            }
+
+            // Draw current step if animation is active, otherwise draw the full ray
+            if (isAnimating && animationSteps.length > 0 && currentStep > 0 && currentStep <= animationSteps.length) {
+                // The traveledCells for animation are handled in autoStep() and drawAnimationStep()
+                drawAnimationStep(animationSteps[currentStep - 1]);
+            } else {
+                drawRay(playerX, playerY, rayDirX, rayDirY);
+            }
+
+            // Draw player
+            ctx.fillStyle = '#eee'; /* White player color */
+            ctx.beginPath();
+            ctx.arc(playerX * GRID_SIZE, playerY * GRID_SIZE, 10, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Draw player direction indicator (small line from player in ray direction)
+            ctx.strokeStyle = '#ddd'; /* Light gray direction indicator */
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(playerX * GRID_SIZE, playerY * GRID_SIZE);
+            ctx.lineTo(
+                (playerX + rayDirX * 0.3) * GRID_SIZE,
+                (playerY + rayDirY * 0.3) * GRID_SIZE
+            );
+            ctx.stroke();
+
+            // Draw player coordinates text
+            ctx.fillStyle = '#ddd'; /* Light gray player coordinates text */
+            ctx.font = '12px JetBrains Mono';
+            ctx.fillText(`(${playerX.toFixed(2)}, ${playerY.toFixed(2)})`,
+                playerX * GRID_SIZE + 15, playerY * GRID_SIZE - 15);
+        }
+
+        // Draws the full ray from player to first wall hit (used when not in step-by-step mode)
+        function drawRay(startX, startY, rayDirX, rayDirY) {
+            let mapX = Math.floor(startX);
+            let mapY = Math.floor(startY);
+
+            const deltaDistX = Math.abs(rayDirX === 0 ? Infinity : 1.0 / rayDirX);
+            const deltaDistY = Math.abs(rayDirY === 0 ? Infinity : 1.0 / rayDirY);
+
+            let stepX, stepY;
+            let sideDistX, sideDistY;
+
+            if (rayDirX < 0) {
+                stepX = -1;
+                sideDistX = (startX - mapX) * deltaDistX;
+            } else {
+                stepX = 1;
+                sideDistX = (mapX + 1.0 - startX) * deltaDistX;
+            }
+
+            if (rayDirY < 0) {
+                stepY = -1;
+                sideDistY = (startY - mapY) * deltaDistY;
+            } else {
+                stepY = 1;
+                sideDistY = (mapY + 1.0 - startY) * deltaDistY;
+            }
+
+            let hit = false;
+            let side = 0;
+            let loopCount = 0;
+            let finalMapX = mapX;
+            let finalMapY = mapY;
+
+            while (!hit && loopCount < (GRID_WIDTH + GRID_HEIGHT) * 2) {
+                if (sideDistX < sideDistY) {
+                    sideDistX += deltaDistX;
+                    mapX += stepX;
+                    side = 0;
+                } else {
+                    sideDistY += deltaDistY;
+                    mapY += stepY;
+                    side = 1;
+                }
+
+                const isOutOfBounds = (mapX < 0 || mapX >= GRID_WIDTH || mapY < 0 || mapY >= GRID_HEIGHT);
+                hit = isOutOfBounds || (map[mapY][mapX] === 1);
+
+                finalMapX = mapX;
+                finalMapY = mapY;
+                loopCount++;
+            }
+
+            let wallDist = Infinity;
+            if (hit) {
+                if (side === 0) {
+                    wallDist = (finalMapX - startX + (1 - stepX) / 2) / rayDirX;
+                } else {
+                    wallDist = (finalMapY - startY + (1 - stepY) / 2) / rayDirY;
+                }
+            }
+
+            // Draw ray line
+            const endX = startX + rayDirX * wallDist;
+            const endY = startY + rayDirY * wallDist;
+
+            ctx.strokeStyle = '#999'; /* Medium gray ray */
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(startX * GRID_SIZE, startY * GRID_SIZE);
+            ctx.lineTo(endX * GRID_SIZE, endY * GRID_SIZE);
+            ctx.stroke();
+
+            // Draw hit point
+            if (hit && wallDist !== Infinity) {
+                ctx.fillStyle = '#ccc'; /* Light gray hit point */
+                ctx.beginPath();
+                ctx.arc(endX * GRID_SIZE, endY * GRID_SIZE, 6, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+        }
+
+        // Draws the current step of the DDA algorithm animation
+        function drawAnimationStep(step) {
+            if (!step) return;
+
+            const rayDirX = Math.cos(rayAngle * Math.PI / 180);
+            const rayDirY = Math.sin(rayAngle * Math.PI / 180);
+
+            // Highlight current grid cell being examined
+            if (step.mapX !== undefined && step.mapX >= 0 && step.mapX < GRID_WIDTH &&
+                step.mapY !== undefined && step.mapY >= 0 && step.mapY < GRID_HEIGHT) {
+
+                // Current cell highlight
+                ctx.fillStyle = step.hit ? 'rgba(200, 100, 100, 0.4)' : 'rgba(100, 200, 200, 0.3)'; /* Desaturated red/cyan */
+                ctx.fillRect(step.mapX * GRID_SIZE, step.mapY * GRID_SIZE, GRID_SIZE, GRID_SIZE);
+
+                // Draw cell coordinates
+                ctx.fillStyle = '#fff';
+                ctx.font = '14px JetBrains Mono';
+                ctx.fillText(`(${step.mapX},${step.mapY})`,
+                    step.mapX * GRID_SIZE + 5, step.mapY * GRID_SIZE + 20);
+            }
+
+            // Draw ray up to current point (estimated based on previous sideDistX/Y in the step)
+            if (step.sideDistX !== undefined && step.sideDistY !== undefined) {
+                // Determine the distance to the grid line that was just crossed
+                let distToCrossedLine;
+                if (step.type === 'setup') {
+                    // For initial setup, it's the min of initial side distances
+                    distToCrossedLine = Math.min(step.sideDistX, step.sideDistY);
+                } else if (step.type === 'step') {
+                    // For a step, it's the current sideDist that *wasn't* just added,
+                    // or (current - delta) for the one that was
+                    if (step.side === 0) { // X-side was closer, moved in X
+                        distToCrossedLine = step.sideDistX - step.deltaDistX; // Distance BEFORE adding deltaX
+                    } else { // Y-side was closer, moved in Y
+                        distToCrossedLine = step.sideDistY - step.deltaDistY; // Distance BEFORE adding deltaY
+                    }
+                } else if (step.type === 'result') {
+                    distToCrossedLine = step.wallDist;
+                } else { // Initial step, or other
+                    distToCrossedLine = 0; // Or some other appropriate value
+                }
+
+                // If distToCrossedLine is negative (e.g., rayDir is 0 causing issues), set to 0 or infinity
+                if (distToCrossedLine < 0) distToCrossedLine = 0;
+
+
+                const currentRayEndX = playerX + rayDirX * distToCrossedLine;
+                const currentRayEndY = playerY + rayDirY * distToCrossedLine;
+
+                ctx.strokeStyle = '#999'; /* Medium gray ray */
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(playerX * GRID_SIZE, playerY * GRID_SIZE);
+                ctx.lineTo(currentRayEndX * GRID_SIZE, currentRayEndY * GRID_SIZE);
+                ctx.stroke();
+
+                // Draw distance indicators for current sideDistX and sideDistY
+                // Only draw if they are valid numbers
+                if (Number.isFinite(step.sideDistX) && step.sideDistX >= 0) {
+                    drawDistanceIndicator(playerX, playerY, rayDirX, rayDirY, step.sideDistX, '#777', 'X'); /* Gray line */
+                }
+                if (Number.isFinite(step.sideDistY) && step.sideDistY >= 0) {
+                    drawDistanceIndicator(playerX, playerY, rayDirX, rayDirY, step.sideDistY, '#777', 'Y'); /* Gray line */
+                }
+            }
+
+            // If it's the final hit step, draw the full ray and hit point
+            if (step.type === 'result' && step.hit && step.wallDist !== Infinity) {
+                 const finalRayEndX = playerX + rayDirX * step.wallDist;
+                 const finalRayEndY = playerY + rayDirY * step.wallDist;
+
+                 ctx.strokeStyle = '#999'; /* Medium gray ray */
+                 ctx.lineWidth = 3;
+                 ctx.beginPath();
+                 ctx.moveTo(playerX * GRID_SIZE, playerY * GRID_SIZE);
+                 ctx.lineTo(finalRayEndX * GRID_SIZE, finalRayEndY * GRID_SIZE);
+                 ctx.stroke();
+
+                 // Draw hit point
+                 ctx.fillStyle = '#ccc'; /* Light gray hit point */
+                 ctx.beginPath();
+                 ctx.arc(finalRayEndX * GRID_SIZE, finalRayEndY * GRID_SIZE, 6, 0, 2 * Math.PI);
+                 ctx.fill();
+            }
+        }
+
+        // Draws a dashed line indicator for side distances
+        function drawDistanceIndicator(startX, startY, rayDirX, rayDirY, distance, color, label) {
+            // Only draw if distance is not Infinity or NaN
+            if (!Number.isFinite(distance) || distance < 0) return;
+
+            const endX = startX + rayDirX * distance;
+            const endY = startY + rayDirY * distance;
+
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]); // Dashed line
+            ctx.beginPath();
+            ctx.moveTo(startX * GRID_SIZE, startY * GRID_SIZE);
+            ctx.lineTo(endX * GRID_SIZE, endY * GRID_SIZE);
+            ctx.stroke();
+            ctx.setLineDash([]); // Reset line dash
+
+            // Label
+            ctx.fillStyle = color;
+            ctx.font = '12px JetBrains Mono';
+            // Position label slightly off the line to be visible
+            const textOffsetX = rayDirX < 0 ? -30 : 5;
+            const textOffsetY = rayDirY < 0 ? -5 : 15;
+            ctx.fillText(`${label}: ${distance.toFixed(2)}`, endX * GRID_SIZE + textOffsetX, endY * GRID_SIZE + textOffsetY);
+        }
+
+        // Updates the display values in the control panel
+        function updateDisplayValues(rayDirX, rayDirY) {
+            document.getElementById('playerX').textContent = playerX.toFixed(2);
+            document.getElementById('playerY').textContent = playerY.toFixed(2);
+            document.getElementById('rayDirX').textContent = rayDirX.toFixed(3);
+            document.getElementById('rayDirY').textContent = rayDirY.toFixed(3);
+
+            const deltaDistX = Math.abs(rayDirX === 0 ? Infinity : 1.0 / rayDirX);
+            const deltaDistY = Math.abs(rayDirY === 0 ? Infinity : 1.0 / rayDirY);
+
+            document.getElementById('deltaX').textContent = deltaDistX.toFixed(3);
+            document.getElementById('deltaY').textContent = deltaDistY.toFixed(3);
+
+            // Display current side distances and map coordinates based on animation step or live calculation
+            if (isAnimating && animationSteps.length > 0 && currentStep > 0 && currentStep <= animationSteps.length) {
+                const step = animationSteps[currentStep - 1]; // Get the currently *displayed* step's data
+                document.getElementById('sideDistX').textContent = Number.isFinite(step.sideDistX) ? step.sideDistX.toFixed(3) : '∞';
+                document.getElementById('sideDistY').textContent = Number.isFinite(step.sideDistY) ? step.sideDistY.toFixed(3) : '∞';
+                document.getElementById('mapX').textContent = step.mapX;
+                document.getElementById('mapY').textContent = step.mapY;
+            } else {
+                // Live calculation of initial side distances when not animating
+                const mapX = Math.floor(playerX);
+                const mapY = Math.floor(playerY);
+                document.getElementById('mapX').textContent = mapX;
+                document.getElementById('mapY').textContent = mapY;
+
+                let sideDistX, sideDistY;
+                if (rayDirX < 0) {
+                    sideDistX = (playerX - mapX) * deltaDistX;
+                } else {
+                    sideDistX = (mapX + 1.0 - playerX) * deltaDistX;
+                }
+
+                if (rayDirY < 0) {
+                    sideDistY = (playerY - mapY) * deltaDistY;
+                } else {
+                    sideDistY = (mapY + 1.0 - playerY) * deltaDistY;
+                }
+
+                document.getElementById('sideDistX').textContent = Number.isFinite(sideDistX) ? sideDistX.toFixed(3) : '∞';
+                document.getElementById('sideDistY').textContent = Number.isFinite(sideDistY) ? sideDistY.toFixed(3) : '∞';
+            }
+        }
+
+        // Manages stepping through the DDA algorithm animation
+        function stepThroughAlgorithm() {
+            if (animationSteps.length === 0) {
+                // Start a new animation
+                const rayDirX = Math.cos(rayAngle * Math.PI / 180);
+                const rayDirY = Math.sin(rayAngle * Math.PI / 180);
+                animationSteps = castRayWithSteps(playerX, playerY, rayDirX, rayDirY);
+                currentStep = 0;
+                isAnimating = true;
+                traveledCells.clear(); // Clear old highlights when starting new animation
+                document.getElementById('stepBtn').textContent = 'Stop Animation';
+                autoStep(); // Start the auto-stepping
+            } else if (isAnimating) {
+                // Stop current animation
+                isAnimating = false;
+                clearTimeout(autoInterval); // Use clearTimeout for setTimeout
+                autoInterval = null;
+                document.getElementById('stepBtn').textContent = 'Resume Animation';
+                draw(); // Redraw to show full ray if animation stopped
+            } else {
+                // Resume animation
+                isAnimating = true;
+                document.getElementById('stepBtn').textContent = 'Stop Animation';
+                autoStep(); // Resume the auto-stepping
+            }
+        }
+
+        // Automated stepping through the animation
+        function autoStep() {
+            if (!isAnimating) return; // If animation is paused or stopped, do nothing
+
+            if (currentStep < animationSteps.length) {
+                const step = animationSteps[currentStep];
+                document.getElementById('stepInfo').innerHTML = `
+                    <strong>${step.description}</strong><br><br>
+                    ${step.explanation.replace(/\n/g, '<br>')}
+                `;
+                document.getElementById('stepCount').textContent = currentStep + 1;
+
+                // Add current cell to traveledCells for highlighting during animation
+                if (step.type === 'step' || step.type === 'result') {
+                    traveledCells.add(`${step.mapX}-${step.mapY}`);
+                }
+
+                currentStep++;
+                draw(); // Draw immediately after updating step and highlighting
+
+                // Schedule the next step
+                autoInterval = setTimeout(autoStep, AUTO_STEP_DELAY); // Use defined faster delay
+            } else {
+                // Animation finished
+                isAnimating = false;
+                clearTimeout(autoInterval);
+                autoInterval = null;
+                document.getElementById('stepBtn').textContent = 'Animation Finished (Click to Restart)';
+                document.getElementById('stepInfo').innerHTML += `<br><br><strong>Animation complete!</strong>`;
+                draw(); // Final draw after animation ends
+            }
+        }
+
+        // Resets only the animation step information, not global state
+        function resetAnimationInfo() {
+            animationSteps = [];
+            currentStep = 0;
+            isAnimating = false;
+            clearTimeout(autoInterval); // Clear any pending auto-step
+            autoInterval = null;
+            document.getElementById('stepBtn').textContent = 'Step Through Algorithm';
+            document.getElementById('stepInfo').innerHTML = 'Click "Step Through Algorithm" to see each step explained';
+            document.getElementById('stepCount').textContent = '0';
+            // traveledCells are now handled by draw() based on highlightTraveled
+        }
+
+        // Full reset: player, map, and animation state
+        function resetAnimation() {
+            resetAnimationInfo(); // Reset animation display
+            // Reset player to a default
+            playerX = 3.3;
+            playerY = 3.7;
+            rayAngle = 45;
+            document.getElementById('rayAngle').value = rayAngle; // Update slider
+            document.getElementById('angleValue').textContent = rayAngle + '°';
+            traveledCells.clear(); // Ensure all highlights are cleared on full reset
+            draw();
+        }
+
+        // Initial setup on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set initial canvas size based on default map
+            resizeCanvasToMap();
+            draw(); // Initial draw
+        });
+
+        // Prevent default browser scrolling/actions for relevant keys
+        document.addEventListener('keydown', (e) => {
+            if (['ArrowLeft', 'ArrowRight', 'KeyW', 'KeyS'].includes(e.code)) {
+                e.preventDefault();
             }
         });
-        
-        // Initial render
-        updateVisualization();
     </script>
 </body>
 </html>
