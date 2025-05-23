@@ -1,21 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DDA Algorithm Visualization</title>
-    <meta name="description" content="A step-by-step visualization of the Digital Differential Analyzer (DDA) ray casting algorithm. Explore how rays traverse a grid to find walls.">
-    <meta name="keywords" content="DDA, algorithm, visualization, ray casting, computer graphics, interactive, game development, rendering">
+    <meta name="description"
+        content="A step-by-step visualization of the Digital Differential Analyzer (DDA) ray casting algorithm. Explore how rays traverse a grid to find walls.">
+    <meta name="keywords"
+        content="DDA, algorithm, visualization, ray casting, computer graphics, interactive, game development, rendering">
 
     <meta property="og:title" content="CUB3D's Raycasting Magic! ✨">
-    <meta property="og:description" content="See how rays hit walls! An interactive DDA algorithm visualizer for understanding CUB3D mechanics.">
+    <meta property="og:description"
+        content="See how rays hit walls! An interactive DDA algorithm visualizer for understanding CUB3D mechanics.">
     <meta property="og:image" content="https://dda-raycasting.vercel.app/thumbnail.png">
     <meta property="og:url" content="https://dda-raycasting.vercel.app/">
     <meta property="og:type" content="website">
 
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="CUB3D's Raycasting Magic! ✨">
-    <meta name="twitter:description" content="See how rays hit walls! An interactive DDA algorithm visualizer for understanding CUB3D mechanics.">
+    <meta name="twitter:description"
+        content="See how rays hit walls! An interactive DDA algorithm visualizer for understanding CUB3D mechanics.">
     <meta name="twitter:image" content="thumbnail.png">
     <link rel="icon" type="image/x-icon" href="favicon.png">
     <style>
@@ -23,8 +28,10 @@
 
         body {
             font-family: 'JetBrains Mono', monospace;
-            background-color: #222; /* Darker gray background */
-            color: #ddd; /* Light gray text */
+            background-color: #222;
+            /* Darker gray background */
+            color: #ddd;
+            /* Light gray text */
             margin: 0;
             padding: 20px;
             display: flex;
@@ -40,28 +47,34 @@
             gap: 20px;
             max-width: 1200px;
             width: 100%;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.4); /* Darker shadow */
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+            /* Darker shadow */
             border-radius: 10px;
             overflow: hidden;
-            background-color: #333; /* Medium gray background */
+            background-color: #333;
+            /* Medium gray background */
             padding: 20px;
-            border: 1px solid #555; /* Subtle border */
+            border: 1px solid #555;
+            /* Subtle border */
         }
 
         .header {
             text-align: center;
             padding-bottom: 10px;
-            border-bottom: 1px solid #555; /* Gray border */
+            border-bottom: 1px solid #555;
+            /* Gray border */
         }
 
         .header h1 {
-            color: #eee; /* White heading */
+            color: #eee;
+            /* White heading */
             margin-bottom: 5px;
             font-size: 2.5em;
         }
 
         .header p {
-            color: #bbb; /* Lighter gray paragraph */
+            color: #bbb;
+            /* Lighter gray paragraph */
             font-size: 1.1em;
         }
 
@@ -75,14 +88,17 @@
         .explanation-section h2 {
             width: 100%;
             text-align: center;
-            color: #ccc; /* Light gray heading */
+            color: #ccc;
+            /* Light gray heading */
             margin-bottom: 15px;
             font-size: 1.8em;
         }
 
         .concept-box {
-            background-color: #444; /* Darker gray box */
-            border: 1px solid #777; /* Gray border */
+            background-color: #444;
+            /* Darker gray box */
+            border: 1px solid #777;
+            /* Gray border */
             border-radius: 8px;
             padding: 15px;
             flex: 1;
@@ -92,26 +108,32 @@
         }
 
         .concept-box h3 {
-            color: #eee; /* White heading */
+            color: #eee;
+            /* White heading */
             margin-top: 0;
-            border-bottom: 1px solid #777; /* Gray border */
+            border-bottom: 1px solid #777;
+            /* Gray border */
             padding-bottom: 5px;
             margin-bottom: 10px;
         }
 
         .concept-box p {
             font-size: 0.95em;
-            color: #ddd; /* Light gray text */
+            color: #ddd;
+            /* Light gray text */
         }
 
         .concept-box .formula {
-            background-color: #555; /* Slightly lighter gray formula background */
-            border-left: 3px solid #999; /* Medium gray border */
+            background-color: #555;
+            /* Slightly lighter gray formula background */
+            border-left: 3px solid #999;
+            /* Medium gray border */
             padding: 10px;
             margin: 10px 0;
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.9em;
-            color: #eee; /* White text */
+            color: #eee;
+            /* White text */
         }
 
         .main-section {
@@ -123,12 +145,15 @@
         }
 
         .canvas-container {
-            background-color: #000; /* Black canvas background */
-            border: 2px solid #555; /* Gray border */
+            background-color: #000;
+            /* Black canvas background */
+            border: 2px solid #555;
+            /* Gray border */
             border-radius: 8px;
             overflow: hidden;
             position: relative;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.6); /* Darker shadow */
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
+            /* Darker shadow */
             flex-grow: 1;
             flex-shrink: 1;
             min-width: 320px;
@@ -145,7 +170,8 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background-color: rgba(0, 0, 0, 0.8); /* Semi-transparent black */
+            background-color: rgba(0, 0, 0, 0.8);
+            /* Semi-transparent black */
             color: #fff;
             padding: 8px 15px;
             font-size: 0.8em;
@@ -157,18 +183,22 @@
         }
 
         .status-bar .key {
-            background-color: #555; /* Medium gray key background */
+            background-color: #555;
+            /* Medium gray key background */
             padding: 3px 6px;
             border-radius: 4px;
             font-weight: bold;
-            color: #eee; /* White key text */
+            color: #eee;
+            /* White key text */
         }
 
         .controls {
             flex: 1;
             min-width: 300px;
-            background-color: #444; /* Darker gray controls background */
-            border: 1px solid #777; /* Gray border */
+            background-color: #444;
+            /* Darker gray controls background */
+            border: 1px solid #777;
+            /* Gray border */
             border-radius: 8px;
             padding: 20px;
             display: flex;
@@ -177,19 +207,24 @@
         }
 
         .control-group h3 {
-            color: #eee; /* White heading */
+            color: #eee;
+            /* White heading */
             margin-top: 0;
             margin-bottom: 10px;
-            border-bottom: 1px solid #777; /* Gray border */
+            border-bottom: 1px solid #777;
+            /* Gray border */
             padding-bottom: 5px;
         }
 
         .map-input {
             width: calc(100% - 10px);
             height: 120px;
-            background-color: #555; /* Input background */
-            border: 1px solid #777; /* Input border */
-            color: #eee; /* Input text color */
+            background-color: #555;
+            /* Input background */
+            border: 1px solid #777;
+            /* Input border */
+            color: #eee;
+            /* Input text color */
             padding: 5px;
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.9em;
@@ -198,8 +233,10 @@
         }
 
         button {
-            background-color: #777; /* Medium gray button */
-            color: #eee; /* White button text */
+            background-color: #777;
+            /* Medium gray button */
+            color: #eee;
+            /* White button text */
             border: none;
             padding: 10px 15px;
             border-radius: 5px;
@@ -212,7 +249,8 @@
         }
 
         button:hover {
-            background-color: #999; /* Lighter gray on hover */
+            background-color: #999;
+            /* Lighter gray on hover */
             transform: translateY(-1px);
         }
 
@@ -225,6 +263,7 @@
             gap: 10px;
             margin-top: 10px;
         }
+
         .zoom-buttons button {
             flex-grow: 1;
         }
@@ -236,14 +275,16 @@
         .slider-container label {
             display: block;
             margin-bottom: 5px;
-            color: #bbb; /* Light gray label */
+            color: #bbb;
+            /* Light gray label */
         }
 
         input[type="range"] {
             width: 100%;
             -webkit-appearance: none;
             height: 8px;
-            background: #555; /* Slider track background */
+            background: #555;
+            /* Slider track background */
             border-radius: 5px;
             outline: none;
         }
@@ -253,24 +294,30 @@
             width: 20px;
             height: 20px;
             border-radius: 50%;
-            background: #eee; /* White slider thumb */
+            background: #eee;
+            /* White slider thumb */
             cursor: pointer;
-            border: 2px solid #bbb; /* Light gray border */
+            border: 2px solid #bbb;
+            /* Light gray border */
         }
 
         .value-display {
             font-size: 0.9em;
-            color: #eee; /* White value display */
+            color: #eee;
+            /* White value display */
             margin-top: 5px;
         }
 
         .math-display {
-            background-color: #555; /* Math display background */
-            border: 1px solid #777; /* Math display border */
+            background-color: #555;
+            /* Math display background */
+            border: 1px solid #777;
+            /* Math display border */
             padding: 10px;
             border-radius: 4px;
             font-size: 0.9em;
-            color: #eee; /* White math text */
+            color: #eee;
+            /* White math text */
         }
 
         .math-display div {
@@ -278,13 +325,16 @@
         }
 
         .math-display .highlight {
-            color: #fff; /* White highlight for math */
+            color: #fff;
+            /* White highlight for math */
             font-weight: bold;
         }
 
         .info-panel {
-            background-color: #444; /* Info panel background */
-            border: 1px solid #777; /* Info panel border */
+            background-color: #444;
+            /* Info panel background */
+            border: 1px solid #777;
+            /* Info panel border */
             border-radius: 8px;
             padding: 20px;
             margin-top: 20px;
@@ -293,22 +343,27 @@
         }
 
         .info-panel h3 {
-            color: #eee; /* White heading */
+            color: #eee;
+            /* White heading */
         }
 
         .step-info {
             white-space: pre-wrap;
             font-size: 1em;
-            color: #ddd; /* Light gray step info text */
+            color: #ddd;
+            /* Light gray step info text */
         }
 
         @media (max-width: 900px) {
-            .main-section, .explanation-section {
+
+            .main-section,
+            .explanation-section {
                 flex-direction: column;
                 align-items: center;
             }
 
-            .concept-box, .controls {
+            .concept-box,
+            .controls {
                 max-width: 100%;
             }
 
@@ -317,6 +372,7 @@
                 display: flex;
                 justify-content: center;
             }
+
             canvas {
                 max-width: 100%;
                 height: auto;
@@ -324,6 +380,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
@@ -1200,21 +1257,21 @@
 
             // If it's the final hit step, draw the full ray and hit point
             if (step.type === 'result' && step.hit && step.wallDist !== Infinity) {
-                 const finalRayEndX = playerX + rayDirX * step.wallDist;
-                 const finalRayEndY = playerY + rayDirY * step.wallDist;
+                const finalRayEndX = playerX + rayDirX * step.wallDist;
+                const finalRayEndY = playerY + rayDirY * step.wallDist;
 
-                 ctx.strokeStyle = '#999'; /* Medium gray ray */
-                 ctx.lineWidth = 3;
-                 ctx.beginPath();
-                 ctx.moveTo(playerX * GRID_SIZE, playerY * GRID_SIZE);
-                 ctx.lineTo(finalRayEndX * GRID_SIZE, finalRayEndY * GRID_SIZE);
-                 ctx.stroke();
+                ctx.strokeStyle = '#999'; /* Medium gray ray */
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(playerX * GRID_SIZE, playerY * GRID_SIZE);
+                ctx.lineTo(finalRayEndX * GRID_SIZE, finalRayEndY * GRID_SIZE);
+                ctx.stroke();
 
-                 // Draw hit point
-                 ctx.fillStyle = '#ccc'; /* Light gray hit point */
-                 ctx.beginPath();
-                 ctx.arc(finalRayEndX * GRID_SIZE, finalRayEndY * GRID_SIZE, 6, 0, 2 * Math.PI);
-                 ctx.fill();
+                // Draw hit point
+                ctx.fillStyle = '#ccc'; /* Light gray hit point */
+                ctx.beginPath();
+                ctx.arc(finalRayEndX * GRID_SIZE, finalRayEndY * GRID_SIZE, 6, 0, 2 * Math.PI);
+                ctx.fill();
             }
         }
 
@@ -1323,8 +1380,8 @@
             if (currentStep < animationSteps.length) {
                 const step = animationSteps[currentStep];
                 document.getElementById('stepInfo').innerHTML = `
-                    <strong>${step.description}</strong><br><br>
-                    ${step.explanation.replace(/\n/g, '<br>')}
+<strong>${step.description}</strong><br><br>
+${step.explanation.replace(/\n/g, '<br>')}
                 `;
                 document.getElementById('stepCount').textContent = currentStep + 1;
 
@@ -1390,4 +1447,5 @@
         });
     </script>
 </body>
+
 </html>
